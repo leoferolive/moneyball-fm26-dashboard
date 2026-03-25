@@ -24,7 +24,7 @@ export function AdvancedFilters({ filters, onUpdate, onReset, clubs, nationaliti
 
   if (!isOpen) {
     return (
-      <div className="px-6 py-1">
+      <div className="py-1">
         <button
           onClick={() => setIsOpen(true)}
           className="text-xs cursor-pointer flex items-center gap-1"
@@ -42,7 +42,7 @@ export function AdvancedFilters({ filters, onUpdate, onReset, clubs, nationaliti
   }
 
   return (
-    <div className="px-6 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+    <div className="py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           Filtros Avançados

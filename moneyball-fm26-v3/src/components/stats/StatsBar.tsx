@@ -21,7 +21,7 @@ export function StatsBar({ players }: StatsBarProps) {
   ]
 
   return (
-    <div className="flex flex-wrap gap-3 px-6 py-3">
+    <div className="flex flex-wrap gap-3 py-3">
       {stats.map((stat) => (
         <div
           key={stat.label}

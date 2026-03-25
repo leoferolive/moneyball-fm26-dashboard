@@ -11,8 +11,8 @@ export function PositionTabs({ playerCounts }: PositionTabsProps) {
 
   return (
     <nav
-      className="flex gap-1 px-4 py-2 overflow-x-auto"
-      style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)' }}
+      className="flex gap-1.5 py-3 overflow-x-auto"
+      style={{ borderBottom: '1px solid var(--color-border)' }}
     >
       {POSITION_ORDER.map((key) => {
         const meta = POSITION_META[key]

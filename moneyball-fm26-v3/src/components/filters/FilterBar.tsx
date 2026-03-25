@@ -7,7 +7,7 @@ interface FilterBarProps {
 
 export function FilterBar({ search, onSearchChange, playerCount, totalCount }: FilterBarProps) {
   return (
-    <div className="flex items-center gap-3 px-6 py-2">
+    <div className="flex items-center gap-3 py-2">
       <div className="relative flex-1 max-w-sm">
         <input
           type="text"

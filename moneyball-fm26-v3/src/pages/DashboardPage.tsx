@@ -93,7 +93,7 @@ export function DashboardPage() {
       <ImportPanel onImport={handleImport} loading={loading} error={error} />
 
       {lastResult && (
-        <div className="px-6 py-2">
+        <div className="py-2">
           <span className="text-xs" style={{ color: 'var(--color-score-s)' }}>
             ✓ {lastResult.playerCount} jogadores importados ({lastResult.separatorName})
           </span>
@@ -123,7 +123,7 @@ export function DashboardPage() {
         nationalities={nationalities}
       />
 
-      <div className="px-6 pb-6">
+      <div className="pb-6">
         <PlayerTable
           players={sortedPlayers}
           displayMetrics={displayMetrics}

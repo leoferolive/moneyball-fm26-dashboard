@@ -98,7 +98,7 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
 
   if (!isOpen) {
     return (
-      <div className="px-6 py-2">
+      <div className="py-2">
         <button
           onClick={() => { setIsOpen(true); loadProfiles() }}
           className="text-sm cursor-pointer flex items-center gap-1"
@@ -116,7 +116,7 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
   }
 
   return (
-    <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+    <div className="py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           ⚙ Scoring Personalizado

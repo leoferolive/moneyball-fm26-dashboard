@@ -24,33 +24,38 @@ function App() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
       <Header />
-      <PositionTabs playerCounts={playerCounts} />
 
-      {/* View navigation */}
-      <nav className="flex gap-1 px-6 py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        {(['dashboard', 'charts', 'comparison'] as const).map((view) => {
-          const labels = { dashboard: '📊 Dashboard', charts: '📈 Gráficos', comparison: '🔄 Comparação' }
-          return (
-            <button
-              key={view}
-              onClick={() => setActiveView(view)}
-              className="text-xs px-3 py-1.5 rounded cursor-pointer transition-colors"
-              style={{
-                backgroundColor: activeView === view ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                color: activeView === view ? '#fff' : 'var(--color-text-secondary)',
-              }}
-            >
-              {labels[view]}
-            </button>
-          )
-        })}
-      </nav>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+        <PositionTabs playerCounts={playerCounts} />
 
-      <Suspense fallback={<div className="p-6" style={{ color: 'var(--color-text-muted)' }}>Carregando...</div>}>
-        {activeView === 'dashboard' && <DashboardPage />}
-        {activeView === 'charts' && <ChartsPage />}
-        {activeView === 'comparison' && <ComparisonPage />}
-      </Suspense>
+        {/* View navigation */}
+        <nav className="flex gap-2 py-3 mt-1" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          {(['dashboard', 'charts', 'comparison'] as const).map((view) => {
+            const labels = { dashboard: '📊 Dashboard', charts: '📈 Gráficos', comparison: '🔄 Comparação' }
+            return (
+              <button
+                key={view}
+                onClick={() => setActiveView(view)}
+                className="text-xs px-4 py-2 rounded-md cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: activeView === view ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                  color: activeView === view ? '#fff' : 'var(--color-text-secondary)',
+                }}
+              >
+                {labels[view]}
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="py-4">
+          <Suspense fallback={<div className="py-8" style={{ color: 'var(--color-text-muted)' }}>Carregando...</div>}>
+            {activeView === 'dashboard' && <DashboardPage />}
+            {activeView === 'charts' && <ChartsPage />}
+            {activeView === 'comparison' && <ComparisonPage />}
+          </Suspense>
+        </div>
+      </div>
     </div>
   )
 }
