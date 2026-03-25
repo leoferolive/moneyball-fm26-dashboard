@@ -81,7 +81,7 @@ Acesse `http://localhost:5173` e cole dados exportados do FM26.
 
 ## Como Usar
 
-1. No Football Manager 26, exporte a view de jogadores (Ctrl+A → Ctrl+C)
+1. No Football Manager 26, exporte a view de jogadores - use o extrator que o [vintesetFM](https://www.youtube.com/@vintesetFM) criou - vídeo do Allan FCL explicando https://www.youtube.com/watch?v=y4TxLiWKJ6s
 2. No dashboard, selecione a posição na aba correspondente
 3. Cole os dados no campo de importação (Ctrl+V) ou arraste um arquivo .csv/.tsv
 4. O sistema detecta automaticamente o separador (tab, ponto-e-vírgula, vírgula)
