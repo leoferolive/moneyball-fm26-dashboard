@@ -4,6 +4,33 @@ Dashboard analítico para Football Manager 2026 com scoring personalizado, gráf
 
 Inspirado em plataformas como FBref, StatsBomb e Opta — foco em dados, limpeza visual e profundidade analítica.
 
+## Screenshots
+
+### Dashboard — Tema Escuro
+![Dashboard Dark](docs/screenshots/dashboard-dark.png)
+
+Tabela principal com heatmap condicional, zebra striping e métricas derivadas por posição.
+
+### Dashboard — Tema Claro
+![Dashboard Light](docs/screenshots/dashboard-light.png)
+
+Alternância de tema com um clique. Todas as cores se adaptam automaticamente.
+
+### Detalhe do Jogador
+![Player Detail](docs/screenshots/player-detail.png)
+
+Modal com todas as métricas do jogador organizadas por categoria (Goleiro, Passes, Criação, Pressão, Disciplina).
+
+### Gráficos
+![Charts](docs/screenshots/charts.png)
+
+Scatter plot comparativo e histograma de distribuição com seletores de métricas.
+
+### Comparação de Jogadores
+![Comparison](docs/screenshots/comparison.png)
+
+Seleção de 2-4 jogadores para comparação lado a lado com radar overlay e tabela métrica-a-métrica.
+
 ## Features
 
 - **10 posições** — Goleiros, Zagueiros, Laterais, Volantes, B2B, Armadores, Avançados, Esforço, Time e Overall
@@ -82,7 +109,9 @@ Acesse `http://localhost:5173` e cole dados exportados do FM26.
     └── vite.config.ts
 ```
 
-## Fluxo de Dados
+## Arquitetura
+
+### Fluxo de Dados
 
 ```
 Paste/CSV → smartParse() → detectPosition() → derive() → IndexedDB → UI
@@ -90,7 +119,7 @@ Paste/CSV → smartParse() → detectPosition() → derive() → IndexedDB → U
                                           scorer() ← ScoringProfile (pesos do usuário)
 ```
 
-## Scoring Personalizado
+### Scoring Personalizado
 
 Diferente de um score fixo, o sistema permite que o usuário:
 - Selecione quais métricas compõem o ranking
