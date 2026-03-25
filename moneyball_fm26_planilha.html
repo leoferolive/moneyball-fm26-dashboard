@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moneyball FM26 — Baseado na Planilha</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10; --bg2: #12151c; --bg3: #1a1e28; --bg4: #232836;
+  --border: #2a3040; --border2: #3a4060;
+  --text: #e0e4ec; --text2: #8890a4; --text3: #5a6278;
+  --accent: #00e893; --accent2: #00c47a; --accent-dim: rgba(0,232,147,0.1); --accent-ring: rgba(0,232,147,0.28);
+  --warn: #ff6b4a; --gold: #ffd700; --blue: #4a9eff;
+  --font: 'JetBrains Mono', monospace; --font2: 'Space Grotesk', sans-serif;
+}
+body[data-theme="light"] {
+  --bg: #f2f5fa; --bg2: #ffffff; --bg3: #e8ecf4; --bg4: #dde3ef;
+  --border: #c8d0e0; --border2: #b0bccc;
+  --text: #1a1e2e; --text2: #4a5470; --text3: #7a849c;
+  --accent: #00b36b; --accent2: #009458;
+  --accent-dim: rgba(0,179,107,0.1); --accent-ring: rgba(0,179,107,0.25);
+  --warn: #e8472a; --gold: #c8940a; --blue: #2a7edf;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:13px; min-height:100vh; }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg2); }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+.header { background:var(--bg2); border-bottom:1px solid var(--accent-ring); padding:16px 24px; display:flex; align-items:center; gap:20px; }
+.logo { font-family:var(--font2); font-size:21px; font-weight:700; color:var(--accent); letter-spacing:0.5px; }
+.logo span { color:var(--text2); font-weight:300; letter-spacing:0; }
+.version { font-size:10px; color:var(--text3); background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; }
+
+.tabs { display:flex; gap:2px; background:var(--bg2); padding:0 24px; border-bottom:1px solid var(--border); overflow-x:auto; }
+.tab { padding:10px 16px; cursor:pointer; color:var(--text2); font-size:12px; font-weight:500; border-bottom:3px solid transparent; transition:all .15s; white-space:nowrap; font-family:var(--font); }
+.tab:hover { color:var(--text); background:var(--bg3); }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); background:rgba(0,232,147,0.07); }
+.tab .emoji { margin-right:4px; }
+
+.main { padding:20px 24px; max-width:100%; }
+
+.input-section { margin-bottom:20px; }
+.input-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.input-header h3 { font-family:var(--font2); font-size:15px; font-weight:600; color:var(--text); }
+.help-text { font-size:11px; color:var(--text3); line-height:1.5; margin-bottom:8px; }
+.help-text code { background:var(--bg3); padding:1px 5px; border-radius:2px; color:var(--accent); }
+
+textarea { width:100%; height:120px; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-family:var(--font); font-size:11px; padding:10px; border-radius:4px; resize:vertical; }
+textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-dim); }
+textarea::placeholder { color:var(--text3); }
+
+.drop-zone { border:1px solid var(--border2); border-radius:8px; padding:18px; text-align:center; cursor:pointer; transition:all .2s; margin-bottom:8px; background:var(--bg3); }
+.drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); border-style:dashed; background:rgba(0,232,147,0.05); }
+.drop-zone .drop-text { font-size:11px; color:var(--text2); }
+.drop-zone .drop-text b { color:var(--text); }
+
+.detect-info { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:4px; margin-top:6px; font-size:11px; }
+.detect-info .det-label { color:var(--text3); }
+.detect-info .det-value { color:var(--accent); font-weight:600; }
+.detect-info .det-warn { color:var(--warn); }
+
+.btn-row { display:flex; gap:8px; margin-top:8px; }
+.btn { padding:8px 18px; border:none; border-radius:4px; cursor:pointer; font-family:var(--font); font-size:12px; font-weight:600; transition:all .15s; }
+.btn-primary { background:var(--accent); color:var(--bg); box-shadow:0 2px 10px rgba(0,232,147,0.25); }
+.btn-primary:hover { background:var(--accent2); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,232,147,0.35); }
+.btn-secondary { background:var(--bg3); color:var(--text2); border:1px solid var(--border); }
+.btn-secondary:hover { border-color:var(--text2); color:var(--text); }
+.btn-danger { background:rgba(255,107,74,0.15); color:var(--warn); border:1px solid rgba(255,107,74,0.3); }
+.btn-danger:hover { background:rgba(255,107,74,0.25); }
+
+.stats-bar { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.stat-card { background:var(--bg2); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:6px; padding:12px 16px; min-width:140px; flex:1; }
+.stat-card .label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px; }
+.stat-card .value { font-size:24px; font-weight:700; color:var(--accent); font-family:var(--font2); line-height:1; }
+.stat-card .sub { font-size:10px; color:var(--text2); margin-top:4px; }
+
+.table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg2); }
+table { width:100%; border-collapse:collapse; font-size:11px; }
+thead th { background:var(--bg3); padding:9px 10px; text-align:left; font-weight:600; color:var(--text3); border-bottom:2px solid var(--border); cursor:pointer; white-space:nowrap; position:sticky; top:0; z-index:1; user-select:none; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; }
+thead th:hover { color:var(--accent); background:var(--bg4); }
+thead th.sorted-asc::after { content:' ▲'; color:var(--accent); font-size:9px; }
+thead th.sorted-desc::after { content:' ▼'; color:var(--accent); font-size:9px; }
+tbody tr { border-bottom:1px solid rgba(42,48,64,0.6); transition:background .1s; }
+tbody tr:hover { background:rgba(0,232,147,0.05); }
+tbody td { padding:6px 10px; white-space:nowrap; }
+td.name { font-weight:600; color:var(--text); }
+td.rank { color:var(--text3); font-weight:700; text-align:center; width:30px; }
+td.num { text-align:right; font-variant-numeric:tabular-nums; }
+td.score-cell { font-weight:700; }
+
+.score-badge { display:inline-block; padding:3px 10px; border-radius:4px; font-weight:700; font-size:11px; letter-spacing:0.3px; }
+.score-s { background:rgba(0,232,147,0.12); color:#00e893; box-shadow:0 0 0 1px rgba(0,232,147,0.35); }
+.score-a { background:rgba(74,158,255,0.12); color:#4a9eff; box-shadow:0 0 0 1px rgba(74,158,255,0.35); }
+.score-b { background:rgba(255,215,0,0.12); color:#ffd700; box-shadow:0 0 0 1px rgba(255,215,0,0.35); }
+.score-c { background:rgba(255,107,74,0.12); color:#ff6b4a; box-shadow:0 0 0 1px rgba(255,107,74,0.35); }
+body[data-theme="light"] .score-s { background:rgba(0,179,107,0.18); color:#007a49; box-shadow:0 0 0 1px rgba(0,179,107,0.45); }
+body[data-theme="light"] .score-a { background:rgba(42,126,223,0.14); color:#1a5db0; box-shadow:0 0 0 1px rgba(42,126,223,0.40); }
+body[data-theme="light"] .score-b { background:rgba(200,148,10,0.15); color:#8a6200; box-shadow:0 0 0 1px rgba(200,148,10,0.40); }
+body[data-theme="light"] .score-c { background:rgba(232,71,42,0.13); color:#c0300f; box-shadow:0 0 0 1px rgba(232,71,42,0.38); }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
+.empty-state h3 { font-family:var(--font2); font-size:16px; color:var(--text2); margin-bottom:8px; }
+
+.cols-info { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+.col-tag { font-size:10px; background:var(--bg3); border:1px solid var(--border); padding:2px 6px; border-radius:2px; color:var(--text2); }
+
+.toast { position:fixed; bottom:20px; right:20px; background:var(--accent); color:var(--bg); padding:10px 20px; border-radius:6px; font-weight:600; font-size:12px; z-index:999; animation:slideIn .3s ease; }
+@keyframes slideIn { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+.legend { display:flex; gap:12px; margin:12px 0; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text2); }
+.legend-dot { width:10px; height:10px; border-radius:2px; }
+.search-bar { display:flex; gap:8px; margin-bottom:10px; align-items:center; flex-wrap:wrap; }
+.search-bar input { flex:1; min-width:180px; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-family:var(--font); font-size:12px; padding:7px 12px; border-radius:4px; }
+.search-bar input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-dim); }
+.search-bar input::placeholder { color:var(--text3); }
+.result-count { font-size:11px; color:var(--text3); margin-bottom:6px; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s ease; }
+.modal-box { background:var(--bg2); border:1px solid var(--border2); border-radius:10px; padding:24px; max-width:740px; width:92%; max-height:84vh; overflow-y:auto; animation:slideUp .2s ease; }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:12px; }
+.modal-name { font-family:var(--font2); font-size:18px; font-weight:700; color:var(--text); }
+.modal-sub { font-size:11px; color:var(--text2); margin-top:4px; }
+.modal-score { font-size:15px !important; padding:5px 14px !important; }
+.modal-close { background:var(--bg3); border:1px solid var(--border); color:var(--text2); width:30px; height:30px; border-radius:4px; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.modal-close:hover { border-color:var(--warn); color:var(--warn); }
+.modal-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:8px; }
+.modal-stat { background:var(--bg3); border:1px solid var(--border); border-radius:5px; padding:8px 10px; }
+.modal-stat.top { border-color:rgba(0,232,147,0.45); background:rgba(0,232,147,0.07); box-shadow:inset 0 0 0 0.5px rgba(0,232,147,0.2); }
+.modal-stat-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; }
+.modal-stat-value { font-size:16px; font-weight:700; color:var(--accent); font-family:var(--font2); line-height:1; }
+tbody tr.data-row { cursor:pointer; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(28px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* ─── HEATMAP VIA DATA ATTRIBUTE ─── */
+td[data-heat="good"] { background: rgba(0,232,147,0.17); }
+td[data-heat="bad"]  { background: rgba(255,107,74,0.15); }
+body[data-theme="light"] td[data-heat="good"] { background: rgba(0,179,107,0.18); }
+body[data-theme="light"] td[data-heat="bad"]  { background: rgba(232,71,42,0.12); }
+
+/* ─── OVERRIDES TEMA CLARO ─── */
+body[data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg3); }
+body[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--border2); }
+body[data-theme="light"] .tab.active { background: rgba(0,179,107,0.08); }
+body[data-theme="light"] .drop-zone:hover, body[data-theme="light"] .drop-zone.drag-over { background: rgba(0,179,107,0.06); }
+body[data-theme="light"] tbody tr:hover { background: rgba(0,179,107,0.07); }
+body[data-theme="light"] .modal-overlay { background: rgba(30,35,60,0.55); }
+body[data-theme="light"] .modal-stat.top { border-color:rgba(0,179,107,0.45); background:rgba(0,179,107,0.08); }
+body[data-theme="light"] .btn-primary { box-shadow: 0 2px 10px rgba(0,179,107,0.22); }
+body[data-theme="light"] .btn-primary:hover { box-shadow: 0 4px 16px rgba(0,179,107,0.32); }
+
+/* ─── BOTÃO TOGGLE TEMA ─── */
+.theme-toggle {
+  margin-left: auto; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); width: 34px; height: 34px; border-radius: 6px;
+  cursor: pointer; font-size: 16px; display: flex; align-items: center;
+  justify-content: center; transition: border-color .15s, background .15s; flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ─── BADGE DE CONTAGEM NAS ABAS ─── */
+.tab-count {
+  font-size: 9px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border);
+  padding: 0px 4px; border-radius: 3px; margin-left: 4px; font-weight: 600; vertical-align: middle;
+}
+.tab.active .tab-count { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-ring); }
+
+/* ─── SEÇÃO DE ENTRADA COLAPSÁVEL ─── */
+.input-toggle-bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: 11px; color: var(--text2); font-family: var(--font);
+  font-weight: 500; margin-bottom: 12px; user-select: none;
+  transition: border-color .15s, color .15s;
+}
+.input-toggle-bar:hover { border-color: var(--accent); color: var(--text); }
+.toggle-arrow { font-size: 9px; transition: transform .2s; display: inline-block; }
+.toggle-arrow.open { transform: rotate(180deg); }
+.toggle-badge {
+  margin-left: auto; background: var(--accent-dim); color: var(--accent);
+  border: 1px solid var(--accent-ring); font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600;
+}
+.input-body.collapsed { display: none; }
+
+/* ─── BOTÃO SCROLL TO TOP ─── */
+.scroll-top-btn {
+  position: fixed; bottom: 24px; left: 20px; width: 38px; height: 38px;
+  border-radius: 8px; background: var(--accent); color: var(--bg);
+  border: none; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  opacity: 0; transform: translateY(10px); transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.scroll-top-btn:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">MONEYBALL<span>FM26</span></div>
+  <div class="version">v2.0 — Baseado na Planilha FM26</div>
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="main" id="main"></div>
+
+<script>
+// ─── POSITION CONFIGURATIONS ───
+const POSITIONS = {
+  goleiros: {
+    emoji: '🧤', name: 'Goleiros',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','HdJ','Minutos','Golos Sofridos','Ds','Dft','Dfa','Press. tent.','Poss Con/90','Poss Perd/90','Sem golos sofridos','Amr','Cartões vermelhos','Faltas Cometidas','Faltas Contra','PeP','Passes Ch','Pas A','Ps C','xGD','Press. conc.','EPG','T Desa','Des C','Crt D','Pen. Enfrentados','Pen. Defendidos','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const gs = pf(r['Golos Sofridos']); const ds = pf(r['Ds']); const dft = pf(r['Dft']); const dfa = pf(r['Dfa']);
+      const cs = pf(r['Sem golos sofridos']); const xgd = pf(r['xGD']); const epg = pf(r['EPG']);
+      const penEnf = pf(r['Pen. Enfrentados']); const penDef = pf(r['Pen. Defendidos']);
+      const defTotal = ds+dft+dfa; const bolasEnf = dft+dfa+ds+gs;
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols Sofridos': gs,
+        'Def Seguras/90': sDiv(ds,j90), 'Def Ponta/90': sDiv(dft,j90), 'Def Desviadas/90': sDiv(dfa,j90),
+        'Def Total/90': sDiv(defTotal,j90), '% Defesas': pct(defTotal,bolasEnf),
+        'xG Defendido/90': sDiv(xgd,j90), 'xG Prev (sem pen)': rnd(xgd-(penDef*0.79)),
+        'xGP Ratio': pct(xgd,xgd+gs), 'Clean Sheet %': pct(cs,j90),
+        'Min/Gol Sofrido': sDiv(min,gs), 'Idx Def Críticas': sDiv(dft*2+dfa*1.5+ds*1,bolasEnf),
+        '% Passes': pct(pasC,pasA), 'Falhas/90': sDiv(epg,j90),
+        '% Pen Defendidos': pct(penDef,penEnf),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const defS= clamp(pct(defTotal,bolasEnf)/75*100,0,100);
+          const xgpS= clamp(pct(xgd,xgd+gs)/50*100,0,100);
+          const csS = clamp(pct(cs,j90)/40*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-60)/30*100,0,100);
+          const errS= clamp(100-sDiv(epg,j90)*40,0,100);
+          const m   = defS*.30+xgpS*.25+csS*.20+pssS*.15+errS*.10;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Def Total/90','% Defesas','xG Defendido/90','Clean Sheet %','Min/Gol Sofrido','Idx Def Críticas','% Passes','Falhas/90','Nota FM'],
+  },
+  zagueiros: {
+    emoji: '🧱', name: 'Zagueiros',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','EPG','Golos','Assist.','Amr','Cartões vermelhos','Press. tent.','Press. conc.','Cabs','Cab A','Cab Dec/90','T Desa','Des C','Blq','Rems Bloq','Poss Con/90','Crt D','Crt','Faltas Cometidas','Alívios','Distância','Sprints/90','Fnt','PeP','Pas A','Ps C','OCG','Remates','Rem %','Pens','Pens M','xG','xA','Passes Ch','Remates em livres','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const cabs = pf(r['Cabs']); const cabA = pf(r['Cab A']); const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']);
+      const desC = pf(r['Des C']); const blq = pf(r['Blq']); const remBlq = pf(r['Rems Bloq']);
+      const intcp = pf(r['Crt']); const crtD = pf(r['Crt D']); const aliv = pf(r['Alívios']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const epg = pf(r['EPG']);
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols+Ast': gols+ast,
+        'Cab Ganhos/90': sDiv(cabA,j90), '% Cabs': pct(cabA,cabs),
+        'Des Ganhos/90': sDiv(desC,j90), 'Int+Bloq/90': sDiv(intcp+blq+remBlq,j90),
+        'Alívios/90': sDiv(aliv,j90), 'Pressão/90': sDiv(presT,j90), '% Pressão': pct(presC,presT),
+        '% Passes': pct(pasC,pasA), 'xG+xA/90': sDiv(xg+xa,j90),
+        'Erros→Gol/90': sDiv(epg,j90),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const aerS= clamp(sDiv(cabA,j90)/5*100,0,100);
+          const apS = clamp(pct(cabA,cabs)/65*100,0,100);
+          const defS= clamp(sDiv(desC,j90)/4*100,0,100);
+          const intS= clamp(sDiv(intcp+blq+remBlq,j90)/10*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-70)/25*100,0,100);
+          const errS= clamp(100-sDiv(epg,j90)*50,0,100);
+          const prS = clamp(pct(presC,presT)/35*100,0,100);
+          const m   = aerS*.15+apS*.10+defS*.20+intS*.20+pssS*.15+errS*.10+prS*.10;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Cab Ganhos/90','% Cabs','Des Ganhos/90','Int+Bloq/90','Alívios/90','% Pressão','% Passes','Erros→Gol/90','Nota FM'],
+  },
+  laterais: {
+    emoji: '🛡️', name: 'Laterais',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','EPG','Golos','Assist.','Amr','Cartões vermelhos','OCG','Poss Perd/90','Sprints/90','xA','xG','Cab A','Cabs','Cab Dec/90','Pas A','Ps C','Passes Ch','PeP','Fnt','Remates','Rem %','Press. tent.','Press. conc.','Faltas Cometidas','T Desa','Des C','Crt D','Blq','Crt','Rems Bloq','Alívios','Cr T','Cr C','Remates em livres','Pens','Pens M','Distância','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xa = pf(r['xA']); const xg = pf(r['xG']); const pens = pf(r['Pens']);
+      const desC = pf(r['Des C']); const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']);
+      const crT = pf(r['Cr T']); const crC = pf(r['Cr C']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const passD = pf(r['Passes Ch']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']); const fnt = pf(r['Fnt']);
+      const epg = pf(r['EPG']); const sprint = pf(r['Sprints/90']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols+Ast': gols+ast,
+        'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xg+xa,j90),
+        'Des Ganhos/90': sDiv(desC,j90), 'Cruzamentos/90': sDiv(crT,j90), '% Cruz': pct(crC,crT),
+        'Pass D/90': sDiv(passD,j90), '% Passes': pct(pasC,pasA),
+        'Fintas/90': sDiv(fnt,j90), 'Sprints/90': sprint,
+        '% Pressão': pct(presC,presT), 'Erros→Gol/90': sDiv(epg,j90),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const xaS = clamp(sDiv(xa,j90)/0.25*100,0,100);
+          const defS= clamp(sDiv(desC,j90)/3*100,0,100);
+          const crS = clamp(sDiv(crT,j90)/5*100,0,100);
+          const cpS = clamp(pct(crC,crT)/25*100,0,100);
+          const pdS = clamp(sDiv(passD,j90)/2.5*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-65)/25*100,0,100);
+          const prS = clamp(pct(presC,presT)/30*100,0,100);
+          const fnS = clamp(sDiv(fnt,j90)/2*100,0,100);
+          const m   = xaS*.25+defS*.15+crS*.10+cpS*.10+pdS*.15+pssS*.10+prS*.10+fnS*.05;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','xA/90','Des Ganhos/90','Cruzamentos/90','% Cruz','Pass D/90','% Passes','Fintas/90','Sprints/90','Nota FM'],
+  },
+  volantes: {
+    emoji: '🛡️', name: 'Volantes',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','EPG','Golos','Assist.','Amr','Cartões vermelhos','OCG','Poss Perd/90','xA','Faltas Cometidas','Cab A','Cabs','Cab Dec/90','Pas A','Ps C','Passes Ch','PeP','Remates','Rem %','Press. tent.','Press. conc.','T Desa','Des C','Crt D','Blq','Crt','Rems Bloq','Alívios','Faltas Contra','Poss Con/90','Remates em livres','Pens','Pens M','Distância','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const desC = pf(r['Des C']); const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']);
+      const intcp = pf(r['Crt']); const blq = pf(r['Blq']); const remBlq = pf(r['Rems Bloq']); const aliv = pf(r['Alívios']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const passD = pf(r['Passes Ch']);
+      const xa = pf(r['xA']); const gols = pf(r['Golos']); const ast = pf(r['Assist.']);
+      const cabA = pf(r['Cab A']); const cabs = pf(r['Cabs']); const epg = pf(r['EPG']);
+      const crtD = pf(r['Crt D']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols+Ast': gols+ast,
+        'Des Ganhos/90': sDiv(desC,j90), '% Des': pct(desC,desT),
+        'Int+Rec/90': sDiv(intcp+blq+remBlq+aliv+crtD,j90),
+        'Pressão/90': sDiv(presT,j90), '% Pressão': pct(presC,presT),
+        '% Passes': pct(pasC,pasA), 'Pass D/90': sDiv(passD,j90),
+        'xA/90': sDiv(xa,j90), 'Cab Ganhos/90': sDiv(cabA,j90),
+        'Bolas Roubadas/90': sDiv(presC+desC+crtD*0.5,j90),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const defS= clamp(sDiv(desC,j90)/3*100,0,100);
+          const dpS = clamp(pct(desC,desT)/60*100,0,100);
+          const irS = clamp(sDiv(intcp+blq+remBlq+aliv+crtD,j90)/12*100,0,100);
+          const p9S = clamp(sDiv(presT,j90)/8*100,0,100);
+          const ppS = clamp(pct(presC,presT)/30*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-70)/25*100,0,100);
+          const pdS = clamp(sDiv(passD,j90)/1.5*100,0,100);
+          const xaS = clamp(sDiv(xa,j90)/0.15*100,0,100);
+          const m   = defS*.20+dpS*.10+irS*.20+p9S*.10+ppS*.10+pssS*.15+pdS*.10+xaS*.05;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Des Ganhos/90','% Des','Int+Rec/90','Pressão/90','% Pressão','% Passes','Pass D/90','xA/90','Nota FM'],
+  },
+  b2b: {
+    emoji: '⚙️', name: 'Box-to-Box',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','EPG','Golos','Assist.','Amr','Cartões vermelhos','OCG','Poss Perd/90','xG','xA','Faltas Cometidas','Faltas Contra','Cab A','Cabs','Cab Dec/90','Pas A','Ps C','Passes Ch','PeP','Fnt','Remates','Rem %','Press. tent.','Press. conc.','T Desa','Des C','Crt D','Blq','Crt','Rems Bloq','Alívios','Poss Con/90','Remates de fora da área em cada 90 minutes','Cr T','Cr C','Remates em livres','Pens','Pens M','Distância','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']);
+      const desC = pf(r['Des C']); const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const passD = pf(r['Passes Ch']);
+      const fnt = pf(r['Fnt']); const intcp = pf(r['Crt']);
+      const xgSP = xg-(pens*0.79);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols': gols, 'Ast': ast,
+        'npxG/90': sDiv(xgSP,j90), 'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xgSP+xa,j90),
+        'Des Ganhos/90': sDiv(desC,j90), 'Pressão C/90': sDiv(presC,j90),
+        '% Passes': pct(pasC,pasA), 'Pass D/90': sDiv(passD,j90),
+        'Fintas/90': sDiv(fnt,j90), '% Pressão': pct(presC,presT),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const ngS = clamp(sDiv(xgSP,j90)/0.3*100,0,100);
+          const xaS = clamp(sDiv(xa,j90)/0.2*100,0,100);
+          const gxS = clamp(sDiv(xgSP+xa,j90)/0.5*100,0,100);
+          const defS= clamp(sDiv(desC,j90)/2.5*100,0,100);
+          const pcS = clamp(sDiv(presC,j90)/3*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-70)/25*100,0,100);
+          const pdS = clamp(sDiv(passD,j90)/2*100,0,100);
+          const fnS = clamp(sDiv(fnt,j90)/2*100,0,100);
+          const ppS = clamp(pct(presC,presT)/30*100,0,100);
+          const m   = ngS*.20+xaS*.15+gxS*.10+defS*.15+pcS*.10+pssS*.10+pdS*.10+fnS*.05+ppS*.05;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Gols','Ast','npxG/90','xA/90','Des Ganhos/90','Pressão C/90','% Passes','Pass D/90','Nota FM'],
+  },
+  armadores: {
+    emoji: '⚙️', name: 'Armadores',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','Golos','Assist.','OCG','Poss Perd/90','xG','xA','Faltas Cometidas','Faltas Contra','Pas A','Ps C','Passes Ch','PeP','Fnt','Remates','Rem %','Press. tent.','Press. conc.','CT-JA','CC-JA','Cr T','Cr C','Golos marcados de fora da área','Remates de fora da área em cada 90 minutes','Remates em livres','Pens','Pens M','Sprints/90','Distância','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']); const ocg = pf(r['OCG']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const passD = pf(r['Passes Ch']);
+      const fnt = pf(r['Fnt']); const crT = pf(r['Cr T']); const crC = pf(r['Cr C']);
+      const xgSP = xg-(pens*0.79);
+      const ctJA = pf(r['CT-JA']); const ccJA = pf(r['CC-JA']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols': gols, 'Ast': ast, 'G+A': gols+ast,
+        'npxG/90': sDiv(xgSP,j90), 'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xgSP+xa,j90),
+        'Pass D/90': sDiv(passD,j90), 'Chances Criadas/90': sDiv(ocg+passD,j90),
+        '% Passes': pct(pasC,pasA), 'Fintas/90': sDiv(fnt,j90),
+        'Cruzamentos/90': sDiv(crT,j90), '% Cruz': pct(crC,crT),
+        'BP Chances/90': sDiv(ccJA,j90),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const xaS = clamp(sDiv(xa,j90)/0.35*100,0,100);
+          const ngS = clamp(sDiv(xgSP,j90)/0.2*100,0,100);
+          const chS = clamp(sDiv(ocg+passD,j90)/4*100,0,100);
+          const pdS = clamp(sDiv(passD,j90)/3*100,0,100);
+          const pssS= clamp((pct(pasC,pasA)-70)/25*100,0,100);
+          const fnS = clamp(sDiv(fnt,j90)/3*100,0,100);
+          const bpS = clamp(sDiv(ccJA,j90)*100,0,100);
+          const m   = xaS*.30+ngS*.15+chS*.20+pdS*.15+pssS*.10+fnS*.05+bpS*.05;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','G+A','npxG/90','xA/90','Pass D/90','Chances Criadas/90','% Passes','Fintas/90','Nota FM'],
+  },
+  avancados: {
+    emoji: '🎯', name: 'Avançados',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Pé Preferido','Salário','Altura','Expira','Minutos','Presenças','HdJ','Golos','Assist.','OCG','Golos DS','Jogos DS','Poss Perd/90','xG','xA','Faltas Cometidas','Faltas Contra','Pas A','Ps C','Passes Ch','PeP','Fnt','Remates','Rem %','Cab A','Cabs','Press. tent.','Press. conc.','T Desa','Des C','Crt','CT-JA','CC-JA','Cr T','Cr C','Golos marcados de fora da área','Remates de fora da área em cada 90 minutes','Remates em livres','Fj','Pens','Pens M','Sprints/90','Distância','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']); const pensM = pf(r['Pens M']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']); const ocg = pf(r['OCG']);
+      const rem = pf(r['Remates']); const remC = pf(r['Rem %']);
+      const cabA = pf(r['Cab A']); const cabs = pf(r['Cabs']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const passD = pf(r['Passes Ch']); const fnt = pf(r['Fnt']);
+      const fj = pf(r['Fj']); const xgSP = xg-(pens*0.79);
+      const golsSP = gols-pensM;
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Salário: r['Salário']||'', Valor: r['Valor Estimado']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols': gols, 'Ast': ast, 'G+A': gols+ast,
+        'Gols/90': sDiv(gols,j90), 'npxG/90': sDiv(xgSP,j90),
+        'Over/Under xG': rnd(golsSP-xgSP),
+        'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xgSP+xa,j90),
+        'Rem/90': sDiv(rem-pens,j90), '% Rem no Gol': remC,
+        'Conversão %': pct(golsSP,rem-pens),
+        'Cab Ganhos/90': sDiv(cabA,j90), 'Pressão/90': sDiv(presT,j90),
+        'Pass D/90': sDiv(passD,j90), 'Min/Gol': sDiv(min,gols),
+        _moneyball: (() => {
+          const fm  = clamp((pf(r['Classificação'])-5)/3*100,0,100);
+          const g9S = clamp(sDiv(gols,j90)/0.5*100,0,100);
+          const ngS = clamp(sDiv(xgSP,j90)/0.4*100,0,100);
+          const cvS = clamp(pct(golsSP,rem-pens)/15*100,0,100);
+          const xaS = clamp(sDiv(xa,j90)/0.15*100,0,100);
+          const rgS = clamp(remC/40*100,0,100);
+          const ouS = clamp((golsSP-xgSP+3)/6*100,0,100);
+          const prS = clamp(sDiv(presT,j90)/5*100,0,100);
+          const m   = g9S*.25+ngS*.20+cvS*.15+xaS*.10+rgS*.10+ouS*.10+prS*.10;
+          return clamp(rnd(fm*.35+m*.65),0,100);
+        })()
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Gols','Ast','Gols/90','npxG/90','Over/Under xG','xA/90','Rem/90','% Rem no Gol','Conversão %','Pressão/90','Nota FM'],
+  },
+  esforco: {
+    emoji: '💪', name: 'Placar de Esforço',
+    rawCols: ['Jogador','Nação','Clube','Idade','Minutos','Poss Con/90','Press. tent.','Press. conc.','Distância','Sprints/90','Des C','Des Dec/90','Fnt','Classificação','EPG','Valor Estimado','Salário'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const dist = pf(r['Distância']); const distP90 = sDiv(dist,j90);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const desC = pf(r['Des C']); const desDecPer90 = pf(r['Des Dec/90']);
+      const sprint = pf(r['Sprints/90']);
+      const epg = pf(r['EPG']); const fnt = pf(r['Fnt']);
+      const vel = min > 0 ? rnd((((dist*1000)/(min*60))*3600)/1000) : 0;
+      // Fórmula exata da planilha FM26
+      const effortScore = rnd(
+        (dist/100)*10 + (distP90/12)*10 + (presT/100)*10 + (presC/50)*10
+        + (sDiv(desC,j90)*10) + ((desDecPer90/0.1)*10) + (epg*-10)
+      );
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Valor: r['Valor Estimado']||'', Salário: r['Salário']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Distância (km)': rnd(dist),
+        'Dist/90': rnd(distP90), 'Vel Média': vel,
+        'Pressões T/90': sDiv(presT,j90), 'Pressões C/90': sDiv(presC,j90),
+        '% Pressão': pct(presC,presT), 'Des Ganhos/90': sDiv(desC,j90),
+        'Des Dec/90': desDecPer90,
+        'Sprints/90': sprint, 'Erros→Gol': epg,
+        _moneyball: clamp(rnd(effortScore/2),0,100)
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','Distância (km)','Dist/90','Vel Média','Pressões T/90','Pressões C/90','% Pressão','Des Ganhos/90','Des Dec/90','Sprints/90','Erros→Gol','Nota FM'],
+  },
+  time: {
+    emoji: '📊', name: 'Time Estatísticas',
+    rawCols: ['Jogador','Idade','Altura','Pé Preferido','Minutos','Classificação','Golos','Assist.','Pens','Pens M','Remates','Rem %','Cab A','Cabs','xG','xA','Poss Perd/90','OCG','Passes Ch','Cr T','Cr C','CT-JA','CC-JA','Crt D','Faltas Cometidas','Faltas Contra','EPG','Distância','Fnt','Pas A','Ps C','PeP','Press. tent.','Press. conc.','T Desa','Des C'],    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']);
+      const rem = pf(r['Remates']); const remC = pf(r['Rem %']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']);
+      const cabA = pf(r['Cab A']); const cabs = pf(r['Cabs']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']); const desC = pf(r['Des C']);
+      const passD = pf(r['Passes Ch']); const fnt = pf(r['Fnt']);
+      const epg = pf(r['EPG']); const dist = pf(r['Distância']);
+      const xgSP = xg-(pens*0.79); const crT = pf(r['Cr T']); const crC = pf(r['Cr C']);
+      const bpT = pf(r['CT-JA']); const bpC = pf(r['CC-JA']);
+      return {
+        Jogador: r['Jogador'], Idade: pf(r['Idade']), 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols': gols, 'Ast': ast, 'G+A': gols+ast,
+        'Pass T/90': sDiv(pasA,j90), 'Pass C/90': sDiv(pasC,j90), '% Passes': pct(pasC,pasA),
+        'npxG/90': sDiv(xgSP,j90), 'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xgSP+xa,j90),
+        'Fin/90': sDiv(rem-pens,j90), '% Fin Certas': remC,
+        'Gols/90': sDiv(gols,j90), 'Ast/90': sDiv(ast,j90),
+        'Cab Disp/90': sDiv(cabA,j90), 'Cab G/90': sDiv(cabs,j90), '% Cabs': pct(cabs,cabA),
+        'Des G/90': sDiv(desC,j90), '% Des': pct(desC,desT),
+        'Chances BP/90': sDiv(bpC,j90), 'Pass D/90': sDiv(passD,j90),
+        'Dist/90': sDiv(dist,j90), 'Fintas/90': sDiv(fnt,j90), 'Falhas/90': sDiv(epg,j90),
+        _moneyball: clamp(rnd(pf(r['Classificação']) * 10), 0, 100)
+      };
+    },
+    displayCols: ['Jogador','Idade','Jogos/90','G+A','Pass T/90','% Passes','npxG/90','xA/90','Gols/90','Ast/90','Cab G/90','Des G/90','Pass D/90','Fintas/90','Dist/90','Nota FM'],
+  },
+  overall: {
+    emoji: '🌎', name: 'Overall Análise',
+    rawCols: ['Jogador','Nação','Clube','Idade','Valor Estimado','Salário','Expira','Minutos','Presenças','HdJ','Golos','Assist.','OCG','Poss Con/90','Poss Perd/90','xG','xA','Faltas Cometidas','Faltas Contra','Pas A','Ps C','Passes Ch','PeP','Fnt','Remates','Rem %','Cab A','Cabs','Press. tent.','Press. conc.','T Desa','Des C','Crt','Crt D','Blq','Rems Bloq','Alívios','Amr','Cartões vermelhos','EPG','Sprints/90','Pens','Pens M','Distância','Cr T','Cr C','Classificação'],
+    derive(r) {
+      const min = pf(r['Minutos']); const j90 = min/90;
+      const xg = pf(r['xG']); const xa = pf(r['xA']); const pens = pf(r['Pens']); const pensM = pf(r['Pens M']);
+      const gols = pf(r['Golos']); const ast = pf(r['Assist.']); const ocg = pf(r['OCG']);
+      const rem = pf(r['Remates']); const remC = pf(r['Rem %']);
+      const pasA = pf(r['Pas A']); const pasC = pf(r['Ps C']); const passD = pf(r['Passes Ch']);
+      const cabA = pf(r['Cab A']); const cabs = pf(r['Cabs']);
+      const presT = pf(r['Press. tent.']); const presC = pf(r['Press. conc.']);
+      const desT = pf(r['T Desa'])+pf(r['Faltas Cometidas']); const desC = pf(r['Des C']);
+      const intcp = pf(r['Crt']); const crtD = pf(r['Crt D']); const blq = pf(r['Blq']); const remBlq = pf(r['Rems Bloq']); const aliv = pf(r['Alívios']);
+      const fnt = pf(r['Fnt']); const epg = pf(r['EPG']); const dist = pf(r['Distância']);
+      const crT = pf(r['Cr T']); const crC = pf(r['Cr C']);
+      const xgSP = xg-(pens*0.79); const sprint = pf(r['Sprints/90']);
+      const amr = pf(r['Amr']); const verm = pf(r['Cartões vermelhos']);
+      return {
+        Jogador: r['Jogador'], Nação: r['Nação']||'', Clube: r['Clube']||'', Idade: pf(r['Idade']),
+        Valor: r['Valor Estimado']||'', Salário: r['Salário']||'', 'Nota FM': pf(r['Classificação']),
+        'Jogos/90': rnd(j90), 'Gols': gols, 'Ast': ast, 'G+A': gols+ast,
+        'Gols/90': sDiv(gols,j90), 'Ast/90': sDiv(ast,j90), 'G+A/90': sDiv(gols+ast,j90),
+        'npxG/90': sDiv(xgSP,j90), 'xA/90': sDiv(xa,j90), 'xG+xA/90': sDiv(xgSP+xa,j90),
+        'Fin/90': sDiv(rem,j90), '% Fin': remC,
+        '% Passes': pct(pasC,pasA), 'Pass D/90': sDiv(passD,j90),
+        'Des G/90': sDiv(desC,j90), 'Int+Bloq/90': sDiv(intcp+blq+remBlq+crtD,j90),
+        'Cab G/90': sDiv(cabs,j90), '% Cabs': pct(cabs,cabA),
+        'Pressão/90': sDiv(presT,j90), '% Pressão': pct(presC,presT),
+        'Cruz/90': sDiv(crT,j90), '% Cruz': pct(crC,crT),
+        'Fintas/90': sDiv(fnt,j90), 'Sprints/90': sprint,
+        'Dist/90': sDiv(dist,j90), 'Falhas/90': sDiv(epg,j90),
+        'Cartões': amr+verm, 'Alívios/90': sDiv(aliv,j90),
+        _moneyball: clamp(rnd(pf(r['Classificação']) * 10), 0, 100)
+      };
+    },
+    displayCols: ['Jogador','Clube','Idade','Jogos/90','G+A','Gols/90','Ast/90','npxG/90','xA/90','% Passes','Des G/90','Pressão/90','Cab G/90','Fintas/90','Sprints/90','Falhas/90','Nota FM'],
+  }
+};
+
+// ─── UTILS ───
+function pf(v) {
+  if(v===undefined||v===null||v==='') return 0;
+  let s = String(v).trim();
+  // Remove common units/suffixes from FM data
+  s = s.replace(/\s*km\s*/gi,'').replace(/\s*cm\s*/gi,'')
+       .replace(/\s*€.*$/,'').replace(/\s*p\/m.*$/,'')
+       .replace(/\s*M\s*€.*$/i,'').replace(/\s*m\s*€.*$/,'')
+       .replace(/[^\d.,\-]/g, function(m) { return ''; });
+  s = s.trim();
+  if(!s || s === '-') return 0;
+
+  // PT-BR: "1.234,56" → 1234.56 | "6,4" → 6.4 | "1234" → 1234
+  // EN: "1,234.56" → 1234.56 | "6.4" → 6.4
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+
+  if(lastComma > lastDot) {
+    // Comma is last → PT-BR decimal: "1.234,56" or "6,4"
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if(lastDot > lastComma) {
+    // Dot is last → EN decimal: "1,234.56" or "6.4"
+    s = s.replace(/,/g, '');
+  } else if(lastComma >= 0 && lastDot < 0) {
+    // Only comma → treat as decimal: "6,4"
+    s = s.replace(',', '.');
+  }
+  // Only dot or no separator → already fine
+
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function rnd(v,d=2) { return Math.round(v * Math.pow(10,d)) / Math.pow(10,d); }
+function sDiv(a,b) { return b===0 ? 0 : rnd(a/b); }
+function pct(a,b) { return b===0 ? 0 : rnd((a/b)*100); }
+function clamp(v,min,max) { return Math.max(min, Math.min(max, v)); }
+
+function scoreClass(s) {
+  if(s >= 70) return 'score-s';
+  if(s >= 50) return 'score-a';
+  if(s >= 30) return 'score-b';
+  return 'score-c';
+}
+function scoreLabel(s) {
+  if(s >= 70) return 'S';
+  if(s >= 50) return 'A';
+  if(s >= 30) return 'B';
+  return 'C';
+}
+
+// ─── STATE ───
+let currentTab = 'goleiros';
+let allData = {};
+let filterText = '';
+let sortCol = '_moneyball';
+let sortDir = 'desc';
+let toastTimeout;
+let colStats = {};
+let lastFiltered = [];
+let inputCollapsed = {};
+
+// ─── TEMA ───
+function toggleTheme() {
+  const current = document.body.dataset.theme || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  const btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+  try { localStorage.setItem('mb_theme', theme); } catch(e) {}
+}
+
+// ─── UI HELPERS ───
+function toggleInputSection() {
+  inputCollapsed[currentTab] = !inputCollapsed[currentTab];
+  const body = document.querySelector('.input-body');
+  const arrow = document.querySelector('.toggle-arrow');
+  if(!body || !arrow) return;
+  const nowCollapsed = inputCollapsed[currentTab];
+  body.classList.toggle('collapsed', nowCollapsed);
+  arrow.classList.toggle('open', !nowCollapsed);
+}
+
+function setupScrollTopBtn() {
+  if(document.getElementById('scrollTopBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'scrollTopBtn';
+  btn.className = 'scroll-top-btn';
+  btn.innerHTML = '↑';
+  btn.title = 'Voltar ao topo';
+  btn.setAttribute('aria-label', 'Voltar ao topo');
+  btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.body.appendChild(btn);
+  window.addEventListener('scroll', () => {
+    const hasData = (allData[currentTab] || []).length > 0;
+    btn.classList.toggle('visible', window.scrollY > 200 && hasData);
+  }, { passive: true });
+}
+
+// ─── RENDERING ───
+function render() {
+  renderTabs();
+  renderMain();
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  for(const [key, cfg] of Object.entries(POSITIONS)) {
+    const t = document.createElement('div');
+    t.className = 'tab' + (currentTab===key ? ' active' : '');
+    const count = (allData[key] || []).length;
+    const badge = count > 0 ? `<span class="tab-count">${count}</span>` : '';
+    t.innerHTML = `<span class="emoji">${cfg.emoji}</span>${cfg.name}${badge}`;
+    t.onclick = () => { currentTab = key; sortCol = '_moneyball'; sortDir = 'desc'; filterText = ''; render(); };
+    tabsEl.appendChild(t);
+  }
+}
+
+function renderMain() {
+  const mainEl = document.getElementById('main');
+  const cfg = POSITIONS[currentTab];
+  const data = allData[currentTab] || [];
+
+  let html = '';
+  // Input section — colapsável quando há dados
+  const hasData = data.length > 0;
+  if(hasData && inputCollapsed[currentTab] === undefined) inputCollapsed[currentTab] = true;
+  const isCollapsed = hasData && inputCollapsed[currentTab] === true;
+
+  html += `<div class="input-section">`;
+  if(hasData) {
+    html += `<div class="input-toggle-bar" onclick="toggleInputSection()">
+      <span class="toggle-arrow${isCollapsed ? '' : ' open'}">▲</span>
+      <span>${cfg.emoji} Entrada de Dados — ${cfg.name}</span>
+      <span class="toggle-badge">${data.length} jogador${data.length!==1?'es':''}</span>
+    </div>`;
+  }
+  html += `<div class="input-body${isCollapsed ? ' collapsed' : ''}">
+    <div class="input-header">
+      <h3>${cfg.emoji} Colar dados de ${cfg.name}</h3>
+    </div>
+    <div class="help-text">
+      <b>Do Excel/Google Sheets:</b> Selecione as colunas com dados → <code>Ctrl+C</code> → cole abaixo.<br>
+      <b>Arquivo CSV:</b> Arraste um <code>.csv</code> na área abaixo ou cole o conteúdo.<br>
+      Auto-detecta separador: <code>Tab</code> · <code>Ponto-e-vírgula (;)</code> · <code>Vírgula (,)</code>
+    </div>
+    <div class="drop-zone" id="dropZone"
+      ondragover="event.preventDefault(); this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="handleFileDrop(event)">
+      <div class="drop-text">📂 Arraste um arquivo <b>.csv</b> aqui ou cole os dados abaixo</div>
+    </div>
+    <div class="cols-info">${cfg.rawCols.map(c => `<span class="col-tag">${c}</span>`).join('')}</div>
+    <textarea id="pasteArea" placeholder="Cole aqui os dados do Excel / Sheets / CSV (com cabeçalhos na 1ª linha)..."></textarea>
+    <div id="detectInfo"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="processData()">⚡ Processar Dados</button>
+      <button class="btn btn-secondary" onclick="previewData()">👁 Pré-visualizar</button>
+      <button class="btn btn-secondary" onclick="loadSampleData()">📋 Dados de Exemplo</button>
+      ${hasData ? `<button class="btn btn-danger" onclick="clearData()">🗑 Limpar</button>` : ''}
+    </div>
+  </div></div>`;
+
+  if(data.length > 0) {
+    // Stats bar
+    const top   = [...data].sort((a,b) => b._moneyball - a._moneyball);
+    const topFM = [...data].sort((a,b) => b['Nota FM'] - a['Nota FM']);
+    const avgScore = rnd(data.reduce((s,d) => s+d._moneyball, 0) / data.length);
+    html += `<div class="stats-bar">
+      <div class="stat-card"><div class="label">Jogadores</div><div class="value">${data.length}</div></div>
+      <div class="stat-card"><div class="label">Melhor Moneyball</div><div class="value">${top[0]?._moneyball || 0}</div><div class="sub">${top[0]?.Jogador || '-'}</div></div>
+      <div class="stat-card"><div class="label">Média Moneyball</div><div class="value">${avgScore}</div></div>
+      <div class="stat-card"><div class="label">Melhor Nota FM</div><div class="value">${topFM[0]?.['Nota FM'] || 0}</div><div class="sub">${topFM[0]?.Jogador || '-'}</div></div>
+    </div>`;
+
+    // Legend
+    html += `<div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(0,232,147,0.5)"></div>S (≥70)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(74,158,255,0.5)"></div>A (≥50)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,215,0,0.5)"></div>B (≥30)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,107,74,0.5)"></div>C (<30)</div>
+    </div>`;
+
+    // Sort + filter
+    const sorted = [...data].sort((a,b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if(typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+      if(sortDir === 'asc') return va > vb ? 1 : va < vb ? -1 : 0;
+      return va < vb ? 1 : va > vb ? -1 : 0;
+    });
+    const ft = filterText.toLowerCase();
+    const filtered = ft ? sorted.filter(r => (r.Jogador||'').toLowerCase().includes(ft) || (r.Clube||'').toLowerCase().includes(ft)) : sorted;
+
+    // Search bar + export
+    html += `<div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Filtrar por jogador ou clube..." value="${filterText.replace(/"/g,'&quot;')}" oninput="filterText=this.value;renderMain()">
+      ${filterText ? `<button class="btn btn-secondary" onclick="filterText='';renderMain()">✕ Limpar</button>` : ''}
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Exportar CSV</button>
+    </div>`;
+    html += `<div class="result-count">${filtered.length} de ${data.length} jogador${data.length!==1?'es':''}</div>`;
+
+    // Table
+    const cols = ['_moneyball', ...cfg.displayCols];
+    // Heatmap: compute min/max per column relative to all loaded data
+    lastFiltered = filtered;
+    colStats = {};
+    for(const col of cols) {
+      const vals = data.map(r=>r[col]).filter(v=>typeof v==='number'&&isFinite(v));
+      if(vals.length>1) colStats[col]={min:Math.min(...vals),max:Math.max(...vals)};
+    }
+    html += `<div class="table-wrap"><table><thead><tr><th>#</th>`;
+    for(const col of cols) {
+      const label = col === '_moneyball' ? '⭐ Moneyball' : col;
+      const cls = col === sortCol ? (sortDir === 'asc' ? 'sorted-asc' : 'sorted-desc') : '';
+      html += `<th class="${cls}" onclick="sortBy('${col}')">${label}</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+    filtered.forEach((row, i) => {
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+      html += `<tr class="data-row" onclick="openModal(${i})"><td class="rank">${medal}</td>`;
+      for(const col of cols) {
+        const v = row[col];
+        if(col === '_moneyball') {
+          html += `<td class="score-cell"><span class="score-badge ${scoreClass(v)}">${scoreLabel(v)} ${v}</span></td>`;
+        } else if(col === 'Jogador') {
+          html += `<td class="name">${v}</td>`;
+        } else if(typeof v === 'number') {
+          html += `<td class="num"${cellHeat(col,v)}>${v}</td>`;
+        } else {
+          html += `<td>${v||''}</td>`;
+        }
+      }
+      html += `</tr>`;
+    });
+    html += `</tbody></table></div>`;
+  } else {
+    html += `<div class="empty-state">
+      <h3>Nenhum dado carregado</h3>
+      <p>Cole os dados do FM26 acima ou clique em "Dados de Exemplo" para testar.</p>
+    </div>`;
+  }
+
+  mainEl.innerHTML = html;
+  if(filterText) {
+    const si = document.getElementById('searchInput');
+    if(si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+  }
+}
+
+function sortBy(col) {
+  if(sortCol === col) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  else { sortCol = col; sortDir = 'desc'; }
+  renderMain();
+}
+
+function processData() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  if(!raw) return showToast('⚠️ Cole os dados primeiro!');
+
+  const parsed = smartParse(raw);
+  if(!parsed) return;
+
+  const cfg = POSITIONS[currentTab];
+  const missingCols = cfg.rawCols.filter(c => !parsed.headers.includes(c));
+  if(missingCols.length > Math.floor(cfg.rawCols.length * 0.4)) {
+    return showToast(`⚠️ Muitas colunas ausentes (${missingCols.length}/${cfg.rawCols.length}): ${missingCols.slice(0,4).join(', ')}...`);
+  }
+
+  const rows = [];
+  for(let i = 0; i < parsed.data.length; i++) {
+    const obj = parsed.data[i];
+    const name = obj['Jogador'] || obj['Nome'] || obj['Player'] || obj['Name'] || '';
+    if(!name) continue;
+    try {
+      const derived = cfg.derive(obj);
+      if(derived['Jogos/90'] >= 1) rows.push(derived);
+    } catch(e) { console.warn('Erro linha', i+2, e); }
+  }
+
+  if(rows.length === 0) {
+    const hint = missingCols.length ? ` Faltam: ${missingCols.slice(0,4).join(', ')}` : '';
+    return showToast(`⚠️ 0 jogadores válidos.${hint}`);
+  }
+
+  allData[currentTab] = rows;
+  saveToStorage();
+  const excl = parsed.data.length - rows.length;
+  showToast(`✅ ${rows.length} ${cfg.name} processados!${excl>0?' ('+excl+' excluídos por pouco tempo)':''}`);
+  renderMain();
+}
+
+// ─── SMART PARSER: auto-detect Tab / ; / , ───
+function smartParse(raw) {
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  if(lines.length < 2) { showToast('⚠️ Precisa de cabeçalho + pelo menos 1 linha'); return null; }
+
+  // Detect separator by counting occurrences in first line
+  const firstLine = lines[0];
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  const semiCount = (firstLine.match(/;/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+
+  let sep, sep_name;
+  if(tabCount >= 3 && tabCount >= semiCount && tabCount >= commaCount) {
+    sep = '\t'; sep_name = 'Tab (Excel/Sheets)';
+  } else if(semiCount >= 3 && semiCount >= commaCount) {
+    sep = ';'; sep_name = 'Ponto-e-vírgula (CSV BR)';
+  } else if(commaCount >= 3) {
+    sep = ','; sep_name = 'Vírgula (CSV)';
+  } else {
+    sep = '\t'; sep_name = 'Tab (fallback)';
+  }
+
+  // Parse with detected separator (handle quoted fields for CSV)
+  const parseLine = (line) => {
+    if(sep === ',' || sep === ';') return parseCSVLine(line, sep);
+    return line.split(sep);
+  };
+
+  const headers = parseLine(lines[0]).map(h => h.trim().replace(/^["']|["']$/g, ''));
+  const data = [];
+
+  for(let i = 1; i < lines.length; i++) {
+    const vals = parseLine(lines[i]);
+    if(vals.length < 3) continue;
+    const obj = {};
+    headers.forEach((h, j) => {
+      let v = (vals[j] || '').trim().replace(/^["']|["']$/g, '');
+      obj[h] = v;
+    });
+    data.push(obj);
+  }
+
+  // Show detection info
+  const cfg = POSITIONS[currentTab];
+  const matched = cfg.rawCols.filter(c => headers.includes(c));
+  const missing = cfg.rawCols.filter(c => !headers.includes(c));
+
+  const infoEl = document.getElementById('detectInfo');
+  if(infoEl) {
+    let infoHTML = `<div class="detect-info">`;
+    infoHTML += `<span><span class="det-label">Formato:</span> <span class="det-value">${sep_name}</span></span>`;
+    infoHTML += `<span><span class="det-label">Linhas:</span> <span class="det-value">${data.length}</span></span>`;
+    infoHTML += `<span><span class="det-label">Colunas:</span> <span class="det-value">${headers.length}</span></span>`;
+    infoHTML += `<span><span class="det-label">Match:</span> <span class="det-value">${matched.length}/${cfg.rawCols.length}</span></span>`;
+    if(missing.length > 0 && missing.length <= 5) {
+      infoHTML += `<span><span class="det-label">Faltando:</span> <span class="det-warn">${missing.join(', ')}</span></span>`;
+    }
+    infoHTML += `</div>`;
+    infoEl.innerHTML = infoHTML;
+  }
+
+  return { headers, data, sep, sep_name };
+}
+
+// CSV line parser that handles quoted fields with commas/semicolons inside
+function parseCSVLine(line, sep) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for(let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if(ch === '"') {
+      if(inQuotes && i+1 < line.length && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if(ch === sep && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// Preview parsed data before processing
+function previewData() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  if(!raw) return showToast('⚠️ Cole os dados primeiro!');
+  const parsed = smartParse(raw);
+  if(!parsed) return;
+  const preview = parsed.data.slice(0,3).map(d => {
+    const name = d['Jogador'] || d['Nome'] || d['Player'] || '???';
+    const mins = d['Minutos'] || d['Minutes'] || '?';
+    return `${name} (${mins} min)`;
+  }).join(' · ');
+  showToast(`👁 ${parsed.data.length} linhas — ${preview}`);
+}
+
+// Handle CSV file drag & drop
+function handleFileDrop(e) {
+  e.preventDefault();
+  e.target.closest('.drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(!file) return;
+  if(!file.name.match(/\.(csv|tsv|txt)$/i)) return showToast('⚠️ Formato não suportado. Use .csv, .tsv ou .txt');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('pasteArea').value = ev.target.result;
+    showToast(`📂 Arquivo "${file.name}" carregado (${(file.size/1024).toFixed(1)} KB)`);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function clearData() {
+  allData[currentTab] = [];
+  delete inputCollapsed[currentTab];
+  renderMain();
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if(existing) existing.remove();
+  clearTimeout(toastTimeout);
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  toastTimeout = setTimeout(() => t.remove(), 3000);
+}
+
+// ─── HEATMAP ───
+const lowerBetter = new Set(['Gols Sofridos','Erros→Gol/90','Falhas/90','Cartões','Min/Gol Sofrido','Min/Gol','Erros→Gol']);
+function cellHeat(col, v) {
+  const s = colStats[col];
+  if(!s || s.max===s.min || typeof v!=='number') return '';
+  let t = (v-s.min)/(s.max-s.min);
+  if(lowerBetter.has(col)) t = 1-t;
+  if(t>0.65) return ' data-heat="good"';
+  if(t<0.30) return ' data-heat="bad"';
+  return '';
+}
+
+// ─── MODAL DE DETALHES ───
+function openModal(idx) {
+  const row = lastFiltered[idx];
+  if(!row) return;
+  const cfg = POSITIONS[currentTab];
+  const skip = new Set(['Jogador','Nação','Clube']);
+  const allCols = [...new Set([...cfg.displayCols, 'Nota FM','Salário','Valor'])].filter(c=>!skip.has(c));
+  // Find top stats (top 30% in their column)
+  const topStats = new Set();
+  for(const col of allCols) {
+    const s = colStats[col];
+    if(!s||s.max===s.min) continue;
+    const v = row[col];
+    if(typeof v!=='number') continue;
+    let t = (v-s.min)/(s.max-s.min);
+    if(lowerBetter.has(col)) t=1-t;
+    if(t>=0.70) topStats.add(col);
+  }
+  let html = `<div class="modal-overlay" onclick="closeModal()"><div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name">${row.Jogador||'?'}</div>
+        <div class="modal-sub">${[row.Clube,row.Nação,row.Idade?row.Idade+' anos':''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="score-badge ${scoreClass(row._moneyball)} modal-score">${scoreLabel(row._moneyball)} ${row._moneyball}</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-grid">`;
+  for(const col of allCols) {
+    const v = row[col];
+    if(v===undefined||v===''||v===0&&col==='Nota FM') continue;
+    const cls = topStats.has(col)?' top':'';
+    html += `<div class="modal-stat${cls}"><div class="modal-stat-label">${col}</div><div class="modal-stat-value">${v}</div></div>`;
+  }
+  html += `</div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+function closeModal() {
+  document.querySelector('.modal-overlay')?.remove();
+}
+
+function exportCSV() {
+  const data = allData[currentTab] || [];
+  if(!data.length) return showToast('⚠️ Sem dados para exportar');
+  const cfg = POSITIONS[currentTab];
+  const cols = ['_moneyball', ...cfg.displayCols];
+  const headers = ['#', 'Moneyball', ...cfg.displayCols.map(c => c)].join(';');
+  const rows = [...data].sort((a,b)=>b._moneyball-a._moneyball).map((r,i) => {
+    const vals = cols.map(c => {
+      const v = r[c] ?? '';
+      return String(v).includes(';') ? `"${String(v).replace(/"/g,'""')}"` : v;
+    });
+    return [i+1, ...vals.slice(1)].join(';');
+  });
+  const csv = '\uFEFF' + [headers, ...rows].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `moneyball_${cfg.name.toLowerCase().replace(/[^a-z0-9]+/g,'_')}.csv`;
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  showToast(`✅ CSV exportado: ${data.length} jogadores`);
+}
+
+function saveToStorage() {
+  try { localStorage.setItem('mb_fm26_v2', JSON.stringify(allData)); } catch(e) {}
+}
+
+function loadFromStorage() {
+  try { const d = localStorage.getItem('mb_fm26_v2'); if(d) allData = JSON.parse(d); } catch(e) {}
+}
+
+// ─── SAMPLE DATA ───
+function loadSampleData() {
+  const cfg = POSITIONS[currentTab];
+  const samples = getSampleData(currentTab);
+  if(!samples) return showToast('⚠️ Sem dados de exemplo para esta posição');
+  allData[currentTab] = samples.map(r => {
+    try { return cfg.derive(r); } catch(e) { return null; }
+  }).filter(r => r && r['Jogos/90'] >= 1);
+  saveToStorage();
+  showToast(`✅ ${allData[currentTab].length} ${cfg.name} carregados (exemplo)`);
+  renderMain();
+}
+
+function getSampleData(pos) {
+  const gk = [
+    {Jogador:'Arijanet Murić',Nação:'KOS',Clube:'Sassuolo',Idade:'27','Valor Estimado':'9,4M €',Salário:'177m €',Altura:'198',Expira:'2028',HdJ:'1',Minutos:'2035','Golos Sofridos':'27',Ds:'16',Dft:'13',Dfa:'61','Press. tent.':'0','Poss Con/90':'4.2','Poss Perd/90':'6.4','Sem golos sofridos':'7',Amr:'2','Cartões vermelhos':'0','Faltas Cometidas':'2','Faltas Contra':'2',PeP:'0','Passes Ch':'0','Pas A':'543','Ps C':'469',xGD:'5.03','Press. conc.':'0',EPG:'1','T Desa':'1','Des C':'1','Crt D':'0','Pen. Enfrentados':'1','Pen. Defendidos':'1',Classificação:'6.8'},
+    {Jogador:'Donovan Léon',Nação:'GUF',Clube:'Auxerre',Idade:'33','Valor Estimado':'1M €',Salário:'27,5m €',Altura:'187',Expira:'2027',HdJ:'1',Minutos:'1710','Golos Sofridos':'19',Ds:'11',Dft:'11',Dfa:'24','Press. tent.':'0','Poss Con/90':'3.3','Poss Perd/90':'9.9','Sem golos sofridos':'8',Amr:'0','Cartões vermelhos':'0','Faltas Cometidas':'0','Faltas Contra':'8',PeP:'0','Passes Ch':'1','Pas A':'475','Ps C':'409',xGD:'7.02','Press. conc.':'0',EPG:'0','T Desa':'0','Des C':'0','Crt D':'0','Pen. Enfrentados':'0','Pen. Defendidos':'0',Classificação:'6.63'},
+    {Jogador:'Edoardo Corvi',Nação:'ITA',Clube:'Parma',Idade:'24','Valor Estimado':'1M €',Salário:'14,5m €',Altura:'185',Expira:'2029',HdJ:'4',Minutos:'2070','Golos Sofridos':'24',Ds:'15',Dft:'20',Dfa:'58','Press. tent.':'0','Poss Con/90':'3.3','Poss Perd/90':'10','Sem golos sofridos':'7',Amr:'0','Cartões vermelhos':'0','Faltas Cometidas':'0','Faltas Contra':'6',PeP:'0','Passes Ch':'0','Pas A':'516','Ps C':'423',xGD:'8.71','Press. conc.':'0',EPG:'0','T Desa':'3','Des C':'1','Crt D':'0','Pen. Enfrentados':'3','Pen. Defendidos':'1',Classificação:'6.81'},
+    {Jogador:'Gabriel Batista',Nação:'BRA',Clube:'Santa Clara',Idade:'27','Valor Estimado':'1M €',Salário:'10m €',Altura:'190',Expira:'2028',HdJ:'2',Minutos:'3060','Golos Sofridos':'48',Ds:'22',Dft:'15',Dfa:'69','Press. tent.':'0','Poss Con/90':'3.8','Poss Perd/90':'5.7','Sem golos sofridos':'4',Amr:'1','Cartões vermelhos':'0','Faltas Cometidas':'1','Faltas Contra':'11',PeP:'0','Passes Ch':'0','Pas A':'819','Ps C':'681',xGD:'5.02','Press. conc.':'0',EPG:'0','T Desa':'4','Des C':'1','Crt D':'0','Pen. Enfrentados':'4','Pen. Defendidos':'1',Classificação:'6.59'},
+    {Jogador:'Hervé Koffi',Nação:'BFA',Clube:'Angers',Idade:'29','Valor Estimado':'3M €',Salário:'60,5m €',Altura:'186',Expira:'2028',HdJ:'2',Minutos:'1530','Golos Sofridos':'14',Ds:'13',Dft:'14',Dfa:'39','Press. tent.':'0','Poss Con/90':'3.2','Poss Perd/90':'7.1','Sem golos sofridos':'4',Amr:'1','Cartões vermelhos':'0','Faltas Cometidas':'1','Faltas Contra':'5',PeP:'0','Passes Ch':'0','Pas A':'412','Ps C':'359',xGD:'10.32','Press. conc.':'0',EPG:'0','T Desa':'1','Des C':'0','Crt D':'0','Pen. Enfrentados':'1','Pen. Defendidos':'0',Classificação:'6.78'},
+    {Jogador:'Sergio Herrera',Nação:'ESP',Clube:'Osasuna',Idade:'32','Valor Estimado':'4M €',Salário:'79m €',Altura:'192',Expira:'2026',HdJ:'2',Minutos:'1603','Golos Sofridos':'23',Ds:'16',Dft:'11',Dfa:'36','Press. tent.':'0','Poss Con/90':'3.6','Poss Perd/90':'8','Sem golos sofridos':'7',Amr:'1','Cartões vermelhos':'1','Faltas Cometidas':'1','Faltas Contra':'4',PeP:'0','Passes Ch':'0','Pas A':'435','Ps C':'357',xGD:'7.41','Press. conc.':'0',EPG:'1','T Desa':'3','Des C':'1','Crt D':'0','Pen. Enfrentados':'3','Pen. Defendidos':'1',Classificação:'6.67'},
+  ];
+  const cb = [
+    {Jogador:'Alan Franco',Nação:'ARG',Clube:'São Paulo',Idade:'30','Valor Estimado':'4M €','Pé Preferido':'Direito',Salário:'62m €',Altura:'181',Expira:'2028',Minutos:'3423',Presenças:'38 (1)',HdJ:'3',EPG:'0',Golos:'3','Assist.':'1',Amr:'2','Cartões vermelhos':'0','Press. tent.':'98','Press. conc.':'20',Cabs:'193','Cab A':'146','Cab Dec/90':'1.2','T Desa':'26','Des C':'22',Blq:'25','Rems Bloq':'20','Poss Con/90':'10.7','Crt D':'2',Crt:'116','Faltas Cometidas':'12',Alívios:'38',Distância:'395,0 km','Sprints/90':'6.1',Fnt:'2',PeP:'119','Pas A':'1833','Ps C':'1699',OCG:'4',Remates:'23','Rem %':'9',Pens:'0','Pens M':'0',xG:'1,89',xA:'1,78','Passes Ch':'19','Remates em livres':'0',Classificação:'6.99'},
+    {Jogador:'Alexander Barboza',Nação:'URU',Clube:'Botafogo',Idade:'31','Valor Estimado':'10M €','Pé Preferido':'Esquerdo',Salário:'79,5m €',Altura:'193',Expira:'2028',Minutos:'3998',Presenças:'45 (1)',HdJ:'2',EPG:'1',Golos:'3','Assist.':'1',Amr:'8','Cartões vermelhos':'0','Press. tent.':'123','Press. conc.':'40',Cabs:'272','Cab A':'193','Cab Dec/90':'2.2','T Desa':'42','Des C':'42',Blq:'36','Rems Bloq':'29','Poss Con/90':'14.7','Crt D':'10',Crt:'158','Faltas Cometidas':'42',Alívios:'39',Distância:'469,8 km','Sprints/90':'8.7',Fnt:'3',PeP:'364','Pas A':'2751','Ps C':'2502',OCG:'0',Remates:'19','Rem %':'6',Pens:'0','Pens M':'0',xG:'2,4',xA:'1,01','Passes Ch':'16','Remates em livres':'0',Classificação:'6.92'},
+    {Jogador:'Danilo',Nação:'BRA',Clube:'Flamengo',Idade:'35','Valor Estimado':'240m €','Pé Preferido':'Direito',Salário:'244m €',Altura:'184',Expira:'2026',Minutos:'3809',Presenças:'44 (3)',HdJ:'2',EPG:'0',Golos:'7','Assist.':'1',Amr:'1','Cartões vermelhos':'0','Press. tent.':'91','Press. conc.':'34',Cabs:'252','Cab A':'190','Cab Dec/90':'1.7','T Desa':'27','Des C':'18',Blq:'25','Rems Bloq':'21','Poss Con/90':'10.1','Crt D':'4',Crt:'124','Faltas Cometidas':'14',Alívios:'30',Distância:'428,9 km','Sprints/90':'6.2',Fnt:'4',PeP:'148','Pas A':'1941','Ps C':'1788',OCG:'3',Remates:'27','Rem %':'16',Pens:'0','Pens M':'0',xG:'3,33',xA:'1,37','Passes Ch':'15','Remates em livres':'0',Classificação:'6.96'},
+    {Jogador:'Gabriel Lacerda',Nação:'BRA',Clube:'Londrina',Idade:'27','Valor Estimado':'1,8M €','Pé Preferido':'Direito',Salário:'6,5m €',Altura:'187',Expira:'2028',Minutos:'4098',Presenças:'29 (1)',HdJ:'3',EPG:'1',Golos:'4','Assist.':'3',Amr:'4','Cartões vermelhos':'2','Press. tent.':'117','Press. conc.':'28',Cabs:'263','Cab A':'198','Cab Dec/90':'1.1','T Desa':'13','Des C':'8',Blq:'42','Rems Bloq':'42','Poss Con/90':'18.3','Crt D':'1',Crt:'142','Faltas Cometidas':'15',Alívios:'60',Distância:'442,4 km','Sprints/90':'3.4',Fnt:'1',PeP:'83','Pas A':'1896','Ps C':'1711',OCG:'4',Remates:'27','Rem %':'6',Pens:'0','Pens M':'0',xG:'3,17',xA:'2,56','Passes Ch':'12','Remates em livres':'0',Classificação:'6.88'},
+    {Jogador:'Pedro Henrique',Nação:'BRA',Clube:'Bragantino',Idade:'31','Valor Estimado':'25M €','Pé Preferido':'Direito',Salário:'35m €',Altura:'188',Expira:'2027',Minutos:'4453',Presenças:'50 (1)',HdJ:'4',EPG:'0',Golos:'6','Assist.':'2',Amr:'3','Cartões vermelhos':'0','Press. tent.':'109','Press. conc.':'41',Cabs:'290','Cab A':'223','Cab Dec/90':'1.4','T Desa':'45','Des C':'43',Blq:'29','Rems Bloq':'29','Poss Con/90':'10.8','Crt D':'11',Crt:'129','Faltas Cometidas':'17',Alívios:'50',Distância:'486,8 km','Sprints/90':'4.7',Fnt:'4',PeP:'159','Pas A':'2433','Ps C':'2246',OCG:'7',Remates:'38','Rem %':'13',Pens:'0','Pens M':'0',xG:'3,28',xA:'1,67','Passes Ch':'9','Remates em livres':'0',Classificação:'6.94'},
+    {Jogador:'Vitão',Nação:'BRA',Clube:'Flamengo',Idade:'26','Valor Estimado':'13M €','Pé Preferido':'Direito',Salário:'64m €',Altura:'186',Expira:'2029',Minutos:'3483',Presenças:'37 (6)',HdJ:'2',EPG:'1',Golos:'4','Assist.':'0',Amr:'1','Cartões vermelhos':'0','Press. tent.':'79','Press. conc.':'27',Cabs:'211','Cab A':'154','Cab Dec/90':'0.6','T Desa':'26','Des C':'21',Blq:'23','Rems Bloq':'22','Poss Con/90':'13.7','Crt D':'3',Crt:'130','Faltas Cometidas':'6',Alívios:'24',Distância:'391,1 km','Sprints/90':'5',Fnt:'0',PeP:'135','Pas A':'1716','Ps C':'1618',OCG:'3',Remates:'31','Rem %':'13',Pens:'0','Pens M':'0',xG:'2,66',xA:'1,12','Passes Ch':'3','Remates em livres':'0',Classificação:'6.97'},
+  ];
+  const fb = [
+    {Jogador:'Braian Cufré',Nação:'ARG',Clube:'Remo',Idade:'29','Valor Estimado':'1,3M €',Salário:'12,5m €',Altura:'178',Expira:'2028',Minutos:'3551',Presenças:'43 (2)',HdJ:'2',EPG:'0',Golos:'1','Assist.':'5',Amr:'11','Cartões vermelhos':'0',OCG:'16','Poss Perd/90':'12.4','Sprints/90':'19.3',xA:'6,23',xG:'1,95','Cab A':'110',Cabs:'54','Cab Dec/90':'0.2','Pas A':'2508','Ps C':'2234','Passes Ch':'63',PeP:'344',Fnt:'39',Remates:'28','Rem %':'11','Press. tent.':'377','Press. conc.':'117','Faltas Cometidas':'73','T Desa':'119','Des C':'86','Crt D':'4',Blq:'20',Crt:'147','Rems Bloq':'16',Alívios:'35','Cr T':'166','Cr C':'34','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'490,4 km',Classificação:'6.94'},
+    {Jogador:'Cuiabano',Nação:'BRA',Clube:'Vasco da Gama',Idade:'23','Valor Estimado':'12M €',Salário:'97,5m €',Altura:'179',Expira:'2030',Minutos:'3253',Presenças:'40 (1)',HdJ:'1',EPG:'0',Golos:'2','Assist.':'9',Amr:'7','Cartões vermelhos':'1',OCG:'10','Poss Perd/90':'12.5','Sprints/90':'20.9',xA:'5,07',xG:'2,73','Cab A':'107',Cabs:'65','Cab Dec/90':'0.2','Pas A':'2067','Ps C':'1823','Passes Ch':'65',PeP:'287',Fnt:'73',Remates:'28','Rem %':'7','Press. tent.':'358','Press. conc.':'100','Faltas Cometidas':'53','T Desa':'114','Des C':'87','Crt D':'5',Blq:'21',Crt:'148','Rems Bloq':'10',Alívios:'20','Cr T':'187','Cr C':'38','Remates em livres':'0',Pens:'1','Pens M':'0',Distância:'457,2 km',Classificação:'6.96'},
+    {Jogador:'Guilherme Arana',Nação:'BRA',Clube:'Fluminense',Idade:'29','Valor Estimado':'7,5M €',Salário:'128m €',Altura:'178',Expira:'2029',Minutos:'3736',Presenças:'48 (3)',HdJ:'1',EPG:'0',Golos:'2','Assist.':'6',Amr:'7','Cartões vermelhos':'0',OCG:'10','Poss Perd/90':'9.4','Sprints/90':'20.7',xA:'6,92',xG:'2,47','Cab A':'104',Cabs:'37','Cab Dec/90':'0.1','Pas A':'2663','Ps C':'2438','Passes Ch':'77',PeP:'346',Fnt:'21',Remates:'20','Rem %':'8','Press. tent.':'377','Press. conc.':'92','Faltas Cometidas':'53','T Desa':'124','Des C':'99','Crt D':'5',Blq:'34',Crt:'143','Rems Bloq':'10',Alívios:'39','Cr T':'166','Cr C':'33','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'511,3 km',Classificação:'6.91'},
+    {Jogador:'João Lucas',Nação:'BRA',Clube:'Remo',Idade:'28','Valor Estimado':'650m €',Salário:'6m €',Altura:'181',Expira:'2027',Minutos:'2056',Presenças:'22 (21)',HdJ:'2',EPG:'0',Golos:'0','Assist.':'7',Amr:'3','Cartões vermelhos':'0',OCG:'7','Poss Perd/90':'14.7','Sprints/90':'19.3',xA:'5,56',xG:'2,36','Cab A':'97',Cabs:'59','Cab Dec/90':'0.5','Pas A':'1149','Ps C':'970','Passes Ch':'31',PeP:'174',Fnt:'89',Remates:'35','Rem %':'11','Press. tent.':'172','Press. conc.':'39','Faltas Cometidas':'32','T Desa':'54','Des C':'51','Crt D':'3',Blq:'8',Crt:'80','Rems Bloq':'1',Alívios:'18','Cr T':'118','Cr C':'20','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'287,0 km',Classificação:'7.05'},
+    {Jogador:'João Pedro',Nação:'BRA',Clube:'Grêmio',Idade:'29','Valor Estimado':'2,1M €',Salário:'83,5m €',Altura:'179',Expira:'2028',Minutos:'4040',Presenças:'53 (3)',HdJ:'2',EPG:'0',Golos:'2','Assist.':'7',Amr:'5','Cartões vermelhos':'0',OCG:'14','Poss Perd/90':'14.3','Sprints/90':'19.4',xA:'8,88',xG:'2,97','Cab A':'157',Cabs:'83','Cab Dec/90':'0.2','Pas A':'2624','Ps C':'2295','Passes Ch':'86',PeP:'405',Fnt:'77',Remates:'34','Rem %':'9','Press. tent.':'427','Press. conc.':'115','Faltas Cometidas':'51','T Desa':'94','Des C':'77','Crt D':'4',Blq:'25',Crt:'162','Rems Bloq':'12',Alívios:'42','Cr T':'223','Cr C':'44','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'554,6 km',Classificação:'6.9'},
+    {Jogador:'Paulo Henrique',Nação:'BRA',Clube:'Vasco da Gama',Idade:'30','Valor Estimado':'3,4M €',Salário:'41,5m €',Altura:'175',Expira:'2028',Minutos:'3270',Presenças:'41 (3)',HdJ:'4',EPG:'1',Golos:'3','Assist.':'10',Amr:'4','Cartões vermelhos':'1',OCG:'16','Poss Perd/90':'12.1','Sprints/90':'17.5',xA:'9,4',xG:'3,2','Cab A':'135',Cabs:'63','Cab Dec/90':'0.2','Pas A':'2152','Ps C':'1873','Passes Ch':'54',PeP:'256',Fnt:'69',Remates:'47','Rem %':'18','Press. tent.':'340','Press. conc.':'98','Faltas Cometidas':'37','T Desa':'111','Des C':'88','Crt D':'8',Blq:'23',Crt:'135','Rems Bloq':'17',Alívios:'45','Cr T':'127','Cr C':'19','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'453,2 km',Classificação:'7.04'},
+  ];
+  const dm = [
+    {Jogador:'Cauan Barros',Nação:'BRA',Clube:'Vasco da Gama',Idade:'22','Valor Estimado':'7M €','Pé Preferido':'Direito',Salário:'32,5m €',Expira:'2029',Minutos:'2837',Presenças:'32 (10)',HdJ:'1',EPG:'0',Golos:'5','Assist.':'4',Amr:'4','Cartões vermelhos':'0',OCG:'10','Poss Perd/90':'6.3',xA:'4.57','Faltas Cometidas':'19','Cab A':'101',Cabs:'64','Cab Dec/90':'0.4','Pas A':'1857','Ps C':'1693','Passes Ch':'40',PeP:'227',Remates:'39','Rem %':'18','Press. tent.':'193','Press. conc.':'46','T Desa':'46','Des C':'31','Crt D':'5',Blq:'17',Crt:'91','Rems Bloq':'14',Alívios:'27','Faltas Contra':'8','Poss Con/90':'8.6',Pens:'0','Pens M':'0',Distância:'371,3 km',Classificação:'6.98'},
+    {Jogador:'Felipe Amaral',Nação:'BRA',Clube:'América Mineiro',Idade:'23','Valor Estimado':'2M €','Pé Preferido':'Direito',Salário:'6,5m €',Expira:'2030',Minutos:'3025',Presenças:'33 (5)',HdJ:'2',EPG:'0',Golos:'1','Assist.':'5',Amr:'3','Cartões vermelhos':'0',OCG:'10','Poss Perd/90':'6.3',xA:'5.11','Faltas Cometidas':'18','Cab A':'48',Cabs:'18','Cab Dec/90':'0.1','Pas A':'1732','Ps C':'1576','Passes Ch':'32',PeP:'189',Remates:'19','Rem %':'6','Press. tent.':'185','Press. conc.':'47','T Desa':'43','Des C':'25','Crt D':'2',Blq:'12',Crt:'88','Rems Bloq':'5',Alívios:'35','Faltas Contra':'21','Poss Con/90':'11.7',Pens:'0','Pens M':'0',Distância:'379,6 km',Classificação:'6.82'},
+    {Jogador:'Ignacio Sosa',Nação:'URU',Clube:'Bragantino',Idade:'23','Valor Estimado':'2M €','Pé Preferido':'Direito',Salário:'4,7m €',Expira:'2030',Minutos:'2864',Presenças:'38 (10)',HdJ:'1',EPG:'3',Golos:'0','Assist.':'5',Amr:'1','Cartões vermelhos':'0',OCG:'10','Poss Perd/90':'8.1',xA:'5.69','Faltas Cometidas':'18','Cab A':'44',Cabs:'19','Cab Dec/90':'0.1','Pas A':'2708','Ps C':'2494','Passes Ch':'59',PeP:'346',Remates:'50','Rem %':'20','Press. tent.':'241','Press. conc.':'50','T Desa':'56','Des C':'35','Crt D':'4',Blq:'22',Crt:'74','Rems Bloq':'16',Alívios:'24','Faltas Contra':'9','Poss Con/90':'6.9',Pens:'0','Pens M':'0',Distância:'395,5 km',Classificação:'6.9'},
+    {Jogador:'João Tavares',Nação:'BRA',Clube:'Londrina',Idade:'22','Valor Estimado':'550m €','Pé Preferido':'Direito',Salário:'1,1m €',Expira:'2028',Minutos:'2439',Presenças:'33 (8)',HdJ:'1',EPG:'0',Golos:'1','Assist.':'3',Amr:'5','Cartões vermelhos':'0',OCG:'4','Poss Perd/90':'7.6',xA:'4.13','Faltas Cometidas':'34','Cab A':'95',Cabs:'56','Cab Dec/90':'0.3','Pas A':'1436','Ps C':'1260','Passes Ch':'24',PeP:'138',Remates:'14','Rem %':'4','Press. tent.':'158','Press. conc.':'34','T Desa':'30','Des C':'17','Crt D':'1',Blq:'13',Crt:'75','Rems Bloq':'7',Alívios:'28','Faltas Contra':'10','Poss Con/90':'10.1',Pens:'0','Pens M':'0',Distância:'326,5 km',Classificação:'6.83'},
+    {Jogador:'Sergio Vásquez',Nação:'ECU',Clube:'Orense',Idade:'22','Valor Estimado':'2M €','Pé Preferido':'Direito',Salário:'6,25m €',Expira:'2029',Minutos:'3106',Presenças:'35',HdJ:'0',EPG:'0',Golos:'0','Assist.':'5',Amr:'7','Cartões vermelhos':'0',OCG:'6','Poss Perd/90':'6.5',xA:'2.71','Faltas Cometidas':'35','Cab A':'100',Cabs:'46','Cab Dec/90':'0.3','Pas A':'1842','Ps C':'1695','Passes Ch':'30',PeP:'231',Remates:'23','Rem %':'3','Press. tent.':'209','Press. conc.':'46','T Desa':'54','Des C':'46','Crt D':'3',Blq:'17',Crt:'84','Rems Bloq':'12',Alívios:'30','Faltas Contra':'17','Poss Con/90':'13',Pens:'0','Pens M':'0',Distância:'393,1 km',Classificação:'6.91'},
+    {Jogador:'Vicente Pizarro',Nação:'CHI',Clube:'Rosario Central',Idade:'23','Valor Estimado':'3M €','Pé Preferido':'Esquerdo',Salário:'6m €',Expira:'2029',Minutos:'2965',Presenças:'36 (3)',HdJ:'1',EPG:'1',Golos:'1','Assist.':'5',Amr:'1','Cartões vermelhos':'0',OCG:'8','Poss Perd/90':'6.8',xA:'3.74','Faltas Cometidas':'5','Cab A':'30',Cabs:'10','Cab Dec/90':'0','Pas A':'1386','Ps C':'1283','Passes Ch':'29',PeP:'148',Remates:'21','Rem %':'4','Press. tent.':'150','Press. conc.':'47','T Desa':'52','Des C':'29','Crt D':'7',Blq:'20',Crt:'66','Rems Bloq':'8',Alívios:'20','Faltas Contra':'15','Poss Con/90':'10.6',Pens:'0','Pens M':'0',Distância:'302,4 km',Classificação:'6.85'},
+    {Jogador:'Zé Lucas',Nação:'BRA',Clube:'Sport Recife',Idade:'18','Valor Estimado':'1,6M €','Pé Preferido':'Direito',Salário:'1,6m €',Expira:'2028',Minutos:'2750',Presenças:'34 (7)',HdJ:'0',EPG:'0',Golos:'3','Assist.':'2',Amr:'3','Cartões vermelhos':'0',OCG:'8','Poss Perd/90':'6.4',xA:'6.09','Faltas Cometidas':'8','Cab A':'44',Cabs:'17','Cab Dec/90':'0.1','Pas A':'1937','Ps C':'1773','Passes Ch':'27',PeP:'204',Remates:'37','Rem %':'12','Press. tent.':'220','Press. conc.':'47','T Desa':'34','Des C':'24','Crt D':'3',Blq:'22',Crt:'89','Rems Bloq':'10',Alívios:'23','Faltas Contra':'12','Poss Con/90':'10.9',Pens:'0','Pens M':'0',Distância:'360,8 km',Classificação:'6.85'},
+  ];
+  const b2b = [
+    {Jogador:'Bruno Zapelli',Nação:'ARG',Clube:'Athletico Paranaense',Idade:'24','Valor Estimado':'3,5M €','Pé Preferido':'Direito',Salário:'41m €',Expira:'2030',Minutos:'2930',Presenças:'40 (1)',HdJ:'1',EPG:'0',Golos:'7','Assist.':'9',Amr:'1','Cartões vermelhos':'0',OCG:'17','Poss Perd/90':'11.1',xG:'9.13',xA:'8.48','Faltas Cometidas':'23','Faltas Contra':'28','Cab A':'118',Cabs:'34','Cab Dec/90':'0.2','Pas A':'1476','Ps C':'1331','Passes Ch':'64',PeP:'88',Fnt:'59',Remates:'87','Rem %':'38','Press. tent.':'198','Press. conc.':'53','T Desa':'35','Des C':'27','Crt D':'0',Blq:'8',Crt:'58','Rems Bloq':'3',Alívios:'15','Poss Con/90':'8.8','Cr T':'176','Cr C':'30','Remates em livres':'7',Pens:'0','Pens M':'0',Distância:'391,6 km',Classificação:'6.82'},
+    {Jogador:'Erick',Nação:'BRA',Clube:'Bahia',Idade:'28','Valor Estimado':'1,5M €','Pé Preferido':'Direito',Salário:'37,5m €',Expira:'2029',Minutos:'3141',Presenças:'30 (26)',HdJ:'1',EPG:'1',Golos:'4','Assist.':'2',Amr:'1','Cartões vermelhos':'0',OCG:'2','Poss Perd/90':'6.9',xG:'3.15',xA:'2.24','Faltas Cometidas':'28','Faltas Contra':'6','Cab A':'77',Cabs:'44','Cab Dec/90':'0.1','Pas A':'1983','Ps C':'1792','Passes Ch':'50',PeP:'232',Fnt:'11',Remates:'64','Rem %':'22','Press. tent.':'328','Press. conc.':'80','T Desa':'85','Des C':'52','Crt D':'5',Blq:'26',Crt:'104','Rems Bloq':'21',Alívios:'38','Poss Con/90':'8.9','Cr T':'33','Cr C':'3','Remates em livres':'2',Pens:'1','Pens M':'0',Distância:'418,2 km',Classificação:'6.85'},
+    {Jogador:'Israel Poblete',Nação:'CHI',Clube:'Universidad de Chile',Idade:'31','Valor Estimado':'2M €','Pé Preferido':'Direito',Salário:'14,25m €',Expira:'2028',Minutos:'3292',Presenças:'37',HdJ:'3',EPG:'0',Golos:'7','Assist.':'9',Amr:'1','Cartões vermelhos':'0',OCG:'10','Poss Perd/90':'15.3',xG:'9.39',xA:'5.85','Faltas Cometidas':'41','Faltas Contra':'29','Cab A':'135',Cabs:'23','Cab Dec/90':'0.1','Pas A':'1613','Ps C':'1445','Passes Ch':'40',PeP:'107',Fnt:'118',Remates:'83','Rem %':'22','Press. tent.':'338','Press. conc.':'73','T Desa':'65','Des C':'48','Crt D':'2',Blq:'16',Crt:'86','Rems Bloq':'0',Alívios:'20','Poss Con/90':'7.3','Cr T':'117','Cr C':'24','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'425,9 km',Classificação:'7.11'},
+    {Jogador:'Josué',Nação:'POR',Clube:'Coritiba',Idade:'36','Valor Estimado':'110m €','Pé Preferido':'Esquerdo',Salário:'32m €',Expira:'2026',Minutos:'3503',Presenças:'45',HdJ:'1',EPG:'1',Golos:'9','Assist.':'7',Amr:'1','Cartões vermelhos':'0',OCG:'19','Poss Perd/90':'10.1',xG:'8.82',xA:'7.73','Faltas Cometidas':'25','Faltas Contra':'29','Cab A':'91',Cabs:'27','Cab Dec/90':'0.1','Pas A':'1862','Ps C':'1685','Passes Ch':'97',PeP:'109',Fnt:'60',Remates:'77','Rem %':'33','Press. tent.':'153','Press. conc.':'32','T Desa':'24','Des C':'13','Crt D':'1',Blq:'9',Crt:'69','Rems Bloq':'4',Alívios:'13','Poss Con/90':'6.7','Cr T':'199','Cr C':'32','Remates em livres':'13',Pens:'3','Pens M':'3',Distância:'461,0 km',Classificação:'6.86'},
+    {Jogador:'Marcelino Moreno',Nação:'ARG',Clube:'Lanús',Idade:'31','Valor Estimado':'2M €','Pé Preferido':'Direito',Salário:'41m €',Expira:'2027',Minutos:'3045',Presenças:'36',HdJ:'4',EPG:'0',Golos:'4','Assist.':'7',Amr:'1','Cartões vermelhos':'0',OCG:'12','Poss Perd/90':'16.3',xG:'8.27',xA:'6.32','Faltas Cometidas':'17','Faltas Contra':'29','Cab A':'82',Cabs:'23','Cab Dec/90':'0','Pas A':'1583','Ps C':'1442','Passes Ch':'69',PeP:'90',Fnt:'67',Remates:'66','Rem %':'28','Press. tent.':'197','Press. conc.':'42','T Desa':'27','Des C':'22','Crt D':'3',Blq:'7',Crt:'39','Rems Bloq':'2',Alívios:'22','Poss Con/90':'8.4','Cr T':'72','Cr C':'13','Remates em livres':'1',Pens:'0','Pens M':'0',Distância:'420,5 km',Classificação:'6.94'},
+    {Jogador:'Pablo Roberto',Nação:'BRA',Clube:'Juventude',Idade:'26','Valor Estimado':'7,5M €','Pé Preferido':'Direito',Salário:'15m €',Expira:'2028',Minutos:'2982',Presenças:'41 (2)',HdJ:'1',EPG:'0',Golos:'9','Assist.':'4',Amr:'4','Cartões vermelhos':'0',OCG:'14','Poss Perd/90':'13.4',xG:'8.93',xA:'6.47','Faltas Cometidas':'29','Faltas Contra':'35','Cab A':'121',Cabs:'42','Cab Dec/90':'0.1','Pas A':'1432','Ps C':'1267','Passes Ch':'67',PeP:'103',Fnt:'50',Remates:'78','Rem %':'29','Press. tent.':'182','Press. conc.':'49','T Desa':'35','Des C':'26','Crt D':'1',Blq:'5',Crt:'42','Rems Bloq':'3',Alívios:'11','Poss Con/90':'10.5','Cr T':'32','Cr C':'7','Remates em livres':'0',Pens:'0','Pens M':'0',Distância:'392,6 km',Classificação:'6.94'},
+  ];
+  const amc = [
+    {Jogador:'Bruno Gomes',Nação:'BRA',Clube:'Internacional',Idade:'25','Valor Estimado':'4M €','Pé Preferido':'Direito',Salário:'26,5m €',Expira:'2027',Minutos:'3015',Presenças:'36 (3)',HdJ:'0',Golos:'2','Assist.':'6',OCG:'17','Poss Perd/90':'13.8',xG:'1.65',xA:'5.74','Faltas Cometidas':'56','Faltas Contra':'25','Pas A':'1687','Ps C':'1510','Passes Ch':'62',PeP:'183',Fnt:'81',Remates:'22','Rem %':'9','Press. tent.':'293','Press. conc.':'77','CT-JA':'188','CC-JA':'36','Cr T':'188','Cr C':'36','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'0.4','Remates em livres':'1',Pens:'0','Pens M':'0','Sprints/90':'23',Distância:'420,3 km',Classificação:'6.92'},
+    {Jogador:'David Terans',Nação:'URU',Clube:'Fluminense',Idade:'32','Valor Estimado':'800m €','Pé Preferido':'Esquerdo',Salário:'48m €',Expira:'2027',Minutos:'1773',Presenças:'17 (18)',HdJ:'1',Golos:'10','Assist.':'5',OCG:'12','Poss Perd/90':'13.1',xG:'11.24',xA:'5.92','Faltas Cometidas':'16','Faltas Contra':'23','Pas A':'872','Ps C':'766','Passes Ch':'63',PeP:'78',Fnt:'40',Remates:'74','Rem %':'43','Press. tent.':'123','Press. conc.':'24','CT-JA':'62','CC-JA':'13','Cr T':'181','Cr C':'29','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'2.3','Remates em livres':'12',Pens:'4','Pens M':'4','Sprints/90':'10.4',Distância:'242,2 km',Classificação:'6.98'},
+    {Jogador:'Jean Lucas',Nação:'BRA',Clube:'Bahia',Idade:'28','Valor Estimado':'4,5M €','Pé Preferido':'Direito',Salário:'141m €',Expira:'2028',Minutos:'3475',Presenças:'44 (4)',HdJ:'2',Golos:'6','Assist.':'4',OCG:'11','Poss Perd/90':'6.6',xG:'4.4',xA:'4.53','Faltas Cometidas':'40','Faltas Contra':'16','Pas A':'2225','Ps C':'2024','Passes Ch':'44',PeP:'292',Fnt:'12',Remates:'66','Rem %':'18','Press. tent.':'288','Press. conc.':'62','CT-JA':'16','CC-JA':'6','Cr T':'17','Cr C':'7','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'1','Remates em livres':'1',Pens:'0','Pens M':'0','Sprints/90':'11.9',Distância:'469,6 km',Classificação:'7'},
+    {Jogador:'Matheuzinho',Nação:'BRA',Clube:'Vitória',Idade:'28','Valor Estimado':'1,6M €','Pé Preferido':'Esquerdo',Salário:'56,5m €',Expira:'2029',Minutos:'2408',Presenças:'30 (3)',HdJ:'0',Golos:'6','Assist.':'7',OCG:'14','Poss Perd/90':'12.6',xG:'7.48',xA:'7.01','Faltas Cometidas':'20','Faltas Contra':'30','Pas A':'1156','Ps C':'1023','Passes Ch':'74',PeP:'84',Fnt:'59',Remates:'76','Rem %':'32','Press. tent.':'212','Press. conc.':'57','CT-JA':'48','CC-JA':'11','Cr T':'168','Cr C':'29','Golos marcados de fora da área':'2','Remates de fora da área em cada 90 minutes':'1.4','Remates em livres':'3',Pens:'0','Pens M':'0','Sprints/90':'12.1',Distância:'336,2 km',Classificação:'6.95'},
+    {Jogador:'Miguel Monsalve',Nação:'COL',Clube:'Grêmio',Idade:'22','Valor Estimado':'4,6M €','Pé Preferido':'Direito',Salário:'10,75m €',Expira:'2030',Minutos:'2305',Presenças:'22 (20)',HdJ:'4',Golos:'8','Assist.':'4',OCG:'13','Poss Perd/90':'10',xG:'9.56',xA:'5.61','Faltas Cometidas':'16','Faltas Contra':'21','Pas A':'1417','Ps C':'1248','Passes Ch':'60',PeP:'97',Fnt:'39',Remates:'74','Rem %':'35','Press. tent.':'105','Press. conc.':'33','CT-JA':'31','CC-JA':'8','Cr T':'95','Cr C':'14','Golos marcados de fora da área':'2','Remates de fora da área em cada 90 minutes':'1.4','Remates em livres':'4',Pens:'1','Pens M':'1','Sprints/90':'10',Distância:'308,6 km',Classificação:'6.93'},
+    {Jogador:'Rodrigo Garro',Nação:'ARG',Clube:'Corinthians',Idade:'28','Valor Estimado':'20M €','Pé Preferido':'Esquerdo',Salário:'154m €',Expira:'2028',Minutos:'3574',Presenças:'47 (4)',HdJ:'5',Golos:'12','Assist.':'10',OCG:'30','Poss Perd/90':'12.6',xG:'10.63',xA:'11.59','Faltas Cometidas':'40','Faltas Contra':'48','Pas A':'2219','Ps C':'1981','Passes Ch':'122',PeP:'162',Fnt:'55',Remates:'92','Rem %':'39','Press. tent.':'318','Press. conc.':'69','CT-JA':'38','CC-JA':'19','Cr T':'294','Cr C':'57','Golos marcados de fora da área':'2','Remates de fora da área em cada 90 minutes':'1.1','Remates em livres':'9',Pens:'2','Pens M':'1','Sprints/90':'15.3',Distância:'501,3 km',Classificação:'7.01'},
+    {Jogador:'Rodrigo Nestor',Nação:'BRA',Clube:'Bahia',Idade:'26','Valor Estimado':'4,5M €','Pé Preferido':'Esquerdo',Salário:'40m €',Expira:'2030',Minutos:'2013',Presenças:'22 (14)',HdJ:'2',Golos:'6','Assist.':'5',OCG:'19','Poss Perd/90':'13.1',xG:'6.07',xA:'4.99','Faltas Cometidas':'13','Faltas Contra':'28','Pas A':'1099','Ps C':'970','Passes Ch':'61',PeP:'85',Fnt:'89',Remates:'50','Rem %':'26','Press. tent.':'177','Press. conc.':'37','CT-JA':'68','CC-JA':'18','Cr T':'104','Cr C':'23','Golos marcados de fora da área':'2','Remates de fora da área em cada 90 minutes':'1.1','Remates em livres':'3',Pens:'0','Pens M':'0','Sprints/90':'10.6',Distância:'261,4 km',Classificação:'6.98'},
+    {Jogador:'Victor Hugo',Nação:'BRA',Clube:'Atlético Mineiro',Idade:'22','Valor Estimado':'2,7M €','Pé Preferido':'Esquerdo',Salário:'22,5m €',Expira:'2030',Minutos:'2589',Presenças:'35 (8)',HdJ:'2',Golos:'15','Assist.':'9',OCG:'22','Poss Perd/90':'13.1',xG:'8.36',xA:'6.06','Faltas Cometidas':'15','Faltas Contra':'33','Pas A':'1419','Ps C':'1236','Passes Ch':'60',PeP:'111',Fnt:'42',Remates:'51','Rem %':'23','Press. tent.':'208','Press. conc.':'56','CT-JA':'38','CC-JA':'9','Cr T':'38','Cr C':'9','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'0.5','Remates em livres':'1',Pens:'0','Pens M':'0','Sprints/90':'10.7',Distância:'346,2 km',Classificação:'7.03'},
+  ];
+  const st = [
+    {Jogador:'André Luís',Nação:'BRA',Clube:'Mirassol',Idade:'31','Valor Estimado':'1M €',Salário:'11,5m €',Minutos:'2098',Presenças:'28 (11)',HdJ:'3',Golos:'16','Assist.':'3',OCG:'4','Golos DS':'91','Jogos DS':'241','Poss Perd/90':'6.4',xG:'9.04',xA:'2.34','Faltas Cometidas':'47','Faltas Contra':'21','Pas A':'497','Ps C':'427','Passes Ch':'22',PeP:'20',Fnt:'35',Remates:'79','Rem %':'32','Cab A':'193',Cabs:'86','Press. tent.':'77','Press. conc.':'18','T Desa':'15','Des C':'4',Crt:'28','CT-JA':'15','CC-JA':'2','Cr T':'15','Cr C':'2','Golos marcados de fora da área':'5','Remates de fora da área em cada 90 minutes':'1.5','Remates em livres':'0',Fj:'35',Pens:'0','Pens M':'0','Sprints/90':'6.2',Distância:'246.4',Classificação:'6.98'},
+    {Jogador:'Carlinhos',Nação:'BRA',Clube:'Remo',Idade:'29','Valor Estimado':'500 €',Salário:'11,25m €',Minutos:'2414',Presenças:'27 (17)',HdJ:'5',Golos:'18','Assist.':'3',OCG:'9','Golos DS':'31','Jogos DS':'100','Poss Perd/90':'12',xG:'12.5',xA:'3.9','Faltas Cometidas':'37','Faltas Contra':'32','Pas A':'978','Ps C':'884','Passes Ch':'34',PeP:'23',Fnt:'27',Remates:'106','Rem %':'57','Cab A':'211',Cabs:'122','Press. tent.':'88','Press. conc.':'21','T Desa':'14','Des C':'10',Crt:'26','CT-JA':'29','CC-JA':'6','Cr T':'29','Cr C':'6','Golos marcados de fora da área':'3','Remates de fora da área em cada 90 minutes':'1.2','Remates em livres':'0',Fj:'21',Pens:'0','Pens M':'0','Sprints/90':'6.6',Distância:'294.8',Classificação:'7.19'},
+    {Jogador:'David Terans',Nação:'URU',Clube:'Fluminense',Idade:'32','Valor Estimado':'1,6M €',Salário:'48m €',Minutos:'1773',Presenças:'17 (18)',HdJ:'1',Golos:'10','Assist.':'5',OCG:'12','Golos DS':'90','Jogos DS':'330','Poss Perd/90':'13.1',xG:'11.24',xA:'5.92','Faltas Cometidas':'16','Faltas Contra':'23','Pas A':'872','Ps C':'766','Passes Ch':'63',PeP:'78',Fnt:'40',Remates:'74','Rem %':'43','Cab A':'52',Cabs:'4','Press. tent.':'123','Press. conc.':'24','T Desa':'26','Des C':'17',Crt:'27','CT-JA':'62','CC-JA':'13','Cr T':'62','Cr C':'13','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'2.3','Remates em livres':'12',Fj:'11',Pens:'4','Pens M':'4','Sprints/90':'10.4',Distância:'242.2',Classificação:'6.98'},
+    {Jogador:'Hulk',Nação:'BRA',Clube:'Atlético Mineiro',Idade:'40','Valor Estimado':'300m €',Salário:'375m €',Minutos:'2857',Presenças:'32',HdJ:'2',Golos:'17','Assist.':'4',OCG:'12','Golos DS':'303','Jogos DS':'550','Poss Perd/90':'8.7',xG:'15.09',xA:'6.66','Faltas Cometidas':'39','Faltas Contra':'30','Pas A':'840','Ps C':'740','Passes Ch':'47',PeP:'35',Fnt:'36',Remates:'97','Rem %':'39','Cab A':'187',Cabs:'31','Press. tent.':'53','Press. conc.':'14','T Desa':'13','Des C':'5',Crt:'33','CT-JA':'14','CC-JA':'5','Cr T':'64','Cr C':'15','Golos marcados de fora da área':'4','Remates de fora da área em cada 90 minutes':'1.3','Remates em livres':'11',Fj:'28',Pens:'4','Pens M':'3','Sprints/90':'8.1',Distância:'356.0',Classificação:'6.92'},
+    {Jogador:'João Pedro',Nação:'GNB',Clube:'Remo',Idade:'29','Valor Estimado':'300m €',Salário:'8,5m €',Minutos:'3199',Presenças:'36 (9)',HdJ:'4',Golos:'15','Assist.':'10',OCG:'17','Golos DS':'77','Jogos DS':'330','Poss Perd/90':'10.9',xG:'12.66',xA:'7.55','Faltas Cometidas':'47','Faltas Contra':'28','Pas A':'1373','Ps C':'1216','Passes Ch':'50',PeP:'40',Fnt:'30',Remates:'94','Rem %':'45','Cab A':'294',Cabs:'108','Press. tent.':'109','Press. conc.':'26','T Desa':'17','Des C':'11',Crt:'31','CT-JA':'42','CC-JA':'13','Cr T':'42','Cr C':'13','Golos marcados de fora da área':'3','Remates de fora da área em cada 90 minutes':'0.8','Remates em livres':'1',Fj:'36',Pens:'4','Pens M':'3','Sprints/90':'6.5',Distância:'386.4',Classificação:'7.07'},
+    {Jogador:'Rafael Santos Borré',Nação:'COL',Clube:'Internacional',Idade:'30','Valor Estimado':'3M €',Salário:'319m €',Minutos:'2077',Presenças:'16 (25)',HdJ:'3',Golos:'14','Assist.':'5',OCG:'7','Golos DS':'91','Jogos DS':'292','Poss Perd/90':'11.2',xG:'10.35',xA:'2.36','Faltas Cometidas':'16','Faltas Contra':'22','Pas A':'746','Ps C':'663','Passes Ch':'23',PeP:'22',Fnt:'17',Remates:'80','Rem %':'40','Cab A':'139',Cabs:'36','Press. tent.':'99','Press. conc.':'24','T Desa':'19','Des C':'17',Crt:'19','CT-JA':'11','CC-JA':'5','Cr T':'11','Cr C':'5','Golos marcados de fora da área':'2','Remates de fora da área em cada 90 minutes':'1','Remates em livres':'0',Fj:'9',Pens:'2','Pens M':'2','Sprints/90':'14.2',Distância:'268.2',Classificação:'6.93'},
+    {Jogador:'Renan Peixoto',Nação:'BRA',Clube:'Fluminense',Idade:'26','Valor Estimado':'550m €',Salário:'500 €',Minutos:'1398',Presenças:'16 (6)',HdJ:'2',Golos:'11','Assist.':'0',OCG:'2','Golos DS':'61','Jogos DS':'93','Poss Perd/90':'4.2',xG:'9.74',xA:'0.98','Faltas Cometidas':'26','Faltas Contra':'13','Pas A':'313','Ps C':'278','Passes Ch':'12',PeP:'9',Fnt:'6',Remates:'49','Rem %':'24','Cab A':'113',Cabs:'56','Press. tent.':'43','Press. conc.':'5','T Desa':'1','Des C':'0',Crt:'8','CT-JA':'1','CC-JA':'0','Cr T':'1','Cr C':'0','Golos marcados de fora da área':'1','Remates de fora da área em cada 90 minutes':'0.7','Remates em livres':'0',Fj:'26',Pens:'0','Pens M':'0','Sprints/90':'5.9',Distância:'168.9',Classificação:'6.91'},
+    {Jogador:'Rodrigo Rodrigues',Nação:'BRA',Clube:'Coritiba',Idade:'30','Valor Estimado':'200m €',Salário:'1,8m €',Minutos:'1678',Presenças:'15 (23)',HdJ:'1',Golos:'10','Assist.':'3',OCG:'4','Golos DS':'48','Jogos DS':'163','Poss Perd/90':'8.7',xG:'7.67',xA:'1.73','Faltas Cometidas':'18','Faltas Contra':'10','Pas A':'621','Ps C':'548','Passes Ch':'18',PeP:'15',Fnt:'10',Remates:'51','Rem %':'23','Cab A':'126',Cabs:'44','Press. tent.':'17','Press. conc.':'5','T Desa':'3','Des C':'1',Crt:'5','CT-JA':'8','CC-JA':'5','Cr T':'8','Cr C':'5','Golos marcados de fora da área':'0','Remates de fora da área em cada 90 minutes':'0.8','Remates em livres':'0',Fj:'16',Pens:'0','Pens M':'0','Sprints/90':'5.5',Distância:'190.1',Classificação:'6.89'},
+  ];
+  const esf = [
+    {Jogador:'André',Nação:'BRA',Clube:'Corinthians',Idade:'20',Minutos:'3212','Poss Con/90':'9.6','Press. tent.':'354','Press. conc.':'103',Distância:'444,8 km','Dist/90':'12.5','Des Dec/90':'0.1','Des C':'68',Fnt:'7',Classificação:'6.87',EPG:'0','Sprints/90':'15.2','Valor Estimado':'5,6M €',Salário:'10,5m €'},
+    {Jogador:'Bruno Gomes',Nação:'BRA',Clube:'Internacional',Idade:'25',Minutos:'3015','Des Dec/90':'0','Poss Con/90':'10.6','Press. tent.':'293','Press. conc.':'77',Distância:'420,3 km','Des C':'64',Fnt:'81',Classificação:'6.92',EPG:'0','Sprints/90':'23','Valor Estimado':'8M €',Salário:'26,5m €'},
+    {Jogador:'Dudu',Nação:'BRA',Clube:'Vitória',Idade:'27',Minutos:'2388','Des Dec/90':'0','Poss Con/90':'12.4','Press. tent.':'241','Press. conc.':'56',Distância:'318,0 km','Des C':'48',Fnt:'12',Classificação:'7.03',EPG:'0','Sprints/90':'12.9','Valor Estimado':'1,3M €',Salário:'15,75m €'},
+    {Jogador:'Everton Ribeiro',Nação:'BRA',Clube:'Bahia',Idade:'37',Minutos:'3334','Des Dec/90':'0','Poss Con/90':'6','Press. tent.':'352','Press. conc.':'66',Distância:'452,6 km','Des C':'46',Fnt:'104',Classificação:'6.84',EPG:'0','Sprints/90':'14.6','Valor Estimado':'50m €',Salário:'244m €'},
+    {Jogador:'Gabriel Menino',Nação:'BRA',Clube:'Santos',Idade:'25',Minutos:'2503','Des Dec/90':'0','Poss Con/90':'9.4','Press. tent.':'283','Press. conc.':'72',Distância:'335,7 km','Des C':'37',Fnt:'15',Classificação:'6.84',EPG:'0','Sprints/90':'13.7','Valor Estimado':'2,4M €',Salário:'53,5m €'},
+    {Jogador:'Jean Lucas',Nação:'BRA',Clube:'Bahia',Idade:'28',Minutos:'3475','Des Dec/90':'0','Poss Con/90':'8.7','Press. tent.':'288','Press. conc.':'62',Distância:'469,6 km','Des C':'48',Fnt:'12',Classificação:'7',EPG:'1','Sprints/90':'11.9','Valor Estimado':'8,4M €',Salário:'141m €'},
+    {Jogador:'Juan Camilo Portilla',Nação:'COL',Clube:'Athletico Paranaense',Idade:'27',Minutos:'3228','Des Dec/90':'0','Poss Con/90':'9.7','Press. tent.':'285','Press. conc.':'71',Distância:'429,8 km','Des C':'45',Fnt:'5',Classificação:'6.88',EPG:'1','Sprints/90':'14.5','Valor Estimado':'2,5M €',Salário:'12,5m €'},
+    {Jogador:'Neto Moura',Nação:'BRA',Clube:'Mirassol',Idade:'30',Minutos:'2967','Des Dec/90':'0','Poss Con/90':'8.7','Press. tent.':'278','Press. conc.':'72',Distância:'395,2 km','Des C':'44',Fnt:'5',Classificação:'6.84',EPG:'0','Sprints/90':'11.4','Valor Estimado':'1,8M €',Salário:'10,75m €'},
+  ];
+  const time = [
+    {Jogador:'Gustavo Henrique',Idade:'33',Minutos:'3624',Classificação:'6.85',Golos:'0','Assist.':'1',Pens:'0','Pens M':'0',Remates:'20','Rem %':'6','Cab A':'233',Cabs:'181',xG:'1.4',xA:'0.14','OCG':'1','Passes Ch':'8','Cr T':'0','Cr C':'0','CT-JA':'0','CC-JA':'0','Crt D':'3','Faltas Cometidas':'12','Faltas Contra':'3',EPG:'0',Distância:'392,7 km',Fnt:'2','Pas A':'1909','Ps C':'1766',PeP:'158','Press. tent.':'84','Press. conc.':'21','T Desa':'19','Des C':'18'},
+    {Jogador:'Tchoca',Idade:'22',Minutos:'3587',Classificação:'6.94',Golos:'4','Assist.':'0',Pens:'0','Pens M':'0',Remates:'24','Rem %':'11','Cab A':'213',Cabs:'148',xG:'2.39',xA:'0.48','OCG':'2','Passes Ch':'14','Cr T':'1','Cr C':'1','CT-JA':'1','CC-JA':'1','Crt D':'7','Faltas Cometidas':'21','Faltas Contra':'2',EPG:'2',Distância:'409,1 km',Fnt:'0','Pas A':'2144','Ps C':'1984',PeP:'203','Press. tent.':'91','Press. conc.':'20','T Desa':'49','Des C':'36'},
+    {Jogador:'André',Idade:'20',Minutos:'3212',Classificação:'6.87',Golos:'3','Assist.':'6',Pens:'0','Pens M':'0',Remates:'34','Rem %':'12','Cab A':'97',Cabs:'39',xG:'3.1',xA:'4.2','OCG':'10','Passes Ch':'42','Cr T':'15','Cr C':'3','CT-JA':'10','CC-JA':'3','Crt D':'5','Faltas Cometidas':'30','Faltas Contra':'15',EPG:'0',Distância:'444,8 km',Fnt:'7','Pas A':'2100','Ps C':'1900',PeP:'200','Press. tent.':'354','Press. conc.':'103','T Desa':'50','Des C':'68'},
+    {Jogador:'Raniele',Idade:'29',Minutos:'3769',Classificação:'6.91',Golos:'2','Assist.':'1',Pens:'0','Pens M':'0',Remates:'39','Rem %':'13','Cab A':'162',Cabs:'112',xG:'2.72',xA:'1.56','OCG':'4','Passes Ch':'19','Cr T':'4','Cr C':'1','CT-JA':'3','CC-JA':'1','Crt D':'5','Faltas Cometidas':'29','Faltas Contra':'7',EPG:'0',Distância:'463,8 km',Fnt:'4','Pas A':'2427','Ps C':'2244',PeP:'258','Press. tent.':'197','Press. conc.':'40','T Desa':'61','Des C':'45'},
+    {Jogador:'Rodrigo Garro',Idade:'28',Minutos:'3574',Classificação:'7.01',Golos:'12','Assist.':'10',Pens:'2','Pens M':'1',Remates:'92','Rem %':'39','Cab A':'155',Cabs:'36',xG:'10.63',xA:'11.59','OCG':'30','Passes Ch':'122','Cr T':'294','Cr C':'57','CT-JA':'38','CC-JA':'19','Crt D':'1','Faltas Cometidas':'40','Faltas Contra':'48',EPG:'0',Distância:'501,3 km',Fnt:'55','Pas A':'2219','Ps C':'1981',PeP:'162','Press. tent.':'318','Press. conc.':'69','T Desa':'73','Des C':'59'},
+    {Jogador:'Yuri Alberto',Idade:'25',Minutos:'4575',Classificação:'6.87',Golos:'24','Assist.':'6',Pens:'0','Pens M':'0',Remates:'137','Rem %':'72','Cab A':'321',Cabs:'81',xG:'21.51',xA:'4.96','OCG':'14','Passes Ch':'56','Cr T':'15','Cr C':'5','CT-JA':'15','CC-JA':'5','Crt D':'0','Faltas Cometidas':'41','Faltas Contra':'40',EPG:'0',Distância:'541,1 km',Fnt:'26','Pas A':'1245','Ps C':'1140',PeP:'26','Press. tent.':'61','Press. conc.':'14','T Desa':'5','Des C':'4'},
+  ];
+  const ov = [
+    {Nação:'BRA',Jogador:'Gustavo Henrique',Idade:'33',Clube:'Corinthians','Valor Estimado':'500m €',Salário:'159m €',Minutos:'3624',Presenças:'42 (3)',HdJ:'2',Golos:'0','Assist.':'1',OCG:'1','Poss Con/90':'10.3','Poss Perd/90':'4.1',xG:'1.4',xA:'0.14','Faltas Cometidas':'12','Faltas Contra':'3','Pas A':'1909','Ps C':'1766','Passes Ch':'8',PeP:'158',Fnt:'2',Remates:'20','Rem %':'6','Cab A':'233',Cabs:'181','Press. tent.':'84','Press. conc.':'21','T Desa':'19','Des C':'18',Crt:'134','CT-JA':'0','CC-JA':'0','Cr T':'0','Cr C':'0',Blq:'27','Rems Bloq':'24',Alívios:'55','Crt D':'3',Amr:'1','Cartões vermelhos':'1',EPG:'0','Sprints/90':'5.5',Pens:'0','Pens M':'0',Distância:'392,7 km',Classificação:'6.85'},
+    {Nação:'BRA',Jogador:'Jean Lucas',Idade:'28',Clube:'Bahia','Valor Estimado':'8,4M €',Salário:'141m €',Minutos:'3475',Presenças:'44 (4)',HdJ:'2',Golos:'6','Assist.':'4',OCG:'11','Poss Con/90':'8.7','Poss Perd/90':'6.6',xG:'4.4',xA:'4.53','Faltas Cometidas':'40','Faltas Contra':'16','Pas A':'2225','Ps C':'2024','Passes Ch':'44',PeP:'292',Fnt:'12',Remates:'66','Rem %':'18','Cab A':'69',Cabs:'31','Press. tent.':'288','Press. conc.':'62','T Desa':'60','Des C':'48',Crt:'125','CT-JA':'16','CC-JA':'6','Cr T':'17','Cr C':'7',Blq:'17','Rems Bloq':'11',Alívios:'37','Crt D':'4',Amr:'2','Cartões vermelhos':'1',EPG:'1','Sprints/90':'11.9',Pens:'0','Pens M':'0',Distância:'469,6 km',Classificação:'7'},
+    {Nação:'BRA',Jogador:'João Pedro',Idade:'29',Clube:'Grêmio','Valor Estimado':'1,6M €',Salário:'83,5m €',Minutos:'3701',Presenças:'49 (3)',HdJ:'2',Golos:'2','Assist.':'7',OCG:'14','Poss Con/90':'11.1','Poss Perd/90':'14.8',xG:'2.89',xA:'8.62','Faltas Cometidas':'43','Faltas Contra':'34','Pas A':'2392','Ps C':'2093','Passes Ch':'83',PeP:'372',Fnt:'68',Remates:'33','Rem %':'8','Cab A':'147',Cabs:'78','Press. tent.':'379','Press. conc.':'104','T Desa':'86','Des C':'71',Crt:'149','CT-JA':'218','CC-JA':'42','Cr T':'218','Cr C':'42',Blq:'22','Rems Bloq':'10',Alívios:'40','Crt D':'3',Amr:'4','Cartões vermelhos':'0',EPG:'0','Sprints/90':'19.4',Pens:'0','Pens M':'0',Distância:'507,3 km',Classificação:'6.92'},
+    {Nação:'BRA',Jogador:'Lucas Barbosa',Idade:'25',Clube:'Bragantino','Valor Estimado':'4,1M €',Salário:'7,75m €',Minutos:'3641',Presenças:'46 (3)',HdJ:'7',Golos:'19','Assist.':'11',OCG:'23','Poss Con/90':'5.7','Poss Perd/90':'12.4',xG:'10.71',xA:'8.77','Faltas Cometidas':'35','Faltas Contra':'72','Pas A':'1749','Ps C':'1527','Passes Ch':'73',PeP:'140',Fnt:'135',Remates:'102','Rem %':'57','Cab A':'165',Cabs:'86','Press. tent.':'411','Press. conc.':'102','T Desa':'76','Des C':'59',Crt:'70','CT-JA':'96','CC-JA':'26','Cr T':'103','Cr C':'27',Blq:'5','Rems Bloq':'2',Alívios:'23','Crt D':'2',Amr:'4','Cartões vermelhos':'0',EPG:'1','Sprints/90':'14.8',Pens:'0','Pens M':'0',Distância:'492,7 km',Classificação:'7.12'},
+    {Nação:'ARG',Jogador:'Rodrigo Garro',Idade:'28',Clube:'Corinthians','Valor Estimado':'20M €',Salário:'154m €',Minutos:'3574',Presenças:'47 (4)',HdJ:'5',Golos:'12','Assist.':'10',OCG:'30','Poss Con/90':'5.8','Poss Perd/90':'12.6',xG:'10.63',xA:'11.59','Faltas Cometidas':'40','Faltas Contra':'48','Pas A':'2219','Ps C':'1981','Passes Ch':'122',PeP:'162',Fnt:'55',Remates:'92','Rem %':'39','Cab A':'155',Cabs:'36','Press. tent.':'318','Press. conc.':'69','T Desa':'73','Des C':'59',Crt:'77','CT-JA':'38','CC-JA':'19','Cr T':'294','Cr C':'57',Blq:'9','Rems Bloq':'7',Alívios:'19','Crt D':'1',Amr:'1','Cartões vermelhos':'0',EPG:'0','Sprints/90':'15.3',Pens:'2','Pens M':'1',Distância:'501,3 km',Classificação:'7.01'},
+    {Nação:'BRA',Jogador:'Yago Pikachu',Idade:'34',Clube:'Remo','Valor Estimado':'500m €',Salário:'47m €',Minutos:'3443',Presenças:'40 (2)',HdJ:'5',Golos:'10','Assist.':'13',OCG:'21','Poss Con/90':'10.8','Poss Perd/90':'12.1',xG:'11',xA:'9.18','Faltas Cometidas':'43','Faltas Contra':'40','Pas A':'2049','Ps C':'1793','Passes Ch':'90',PeP:'298',Fnt:'68',Remates:'67','Rem %':'32','Cab A':'129',Cabs:'35','Press. tent.':'310','Press. conc.':'74','T Desa':'84','Des C':'62',Crt:'135','CT-JA':'178','CC-JA':'45','Cr T':'212','Cr C':'51',Blq:'14','Rems Bloq':'6',Alívios:'24','Crt D':'3',Amr:'8','Cartões vermelhos':'0',EPG:'2','Sprints/90':'17.6',Pens:'7','Pens M':'5',Distância:'461,6 km',Classificação:'7.18'},
+    {Nação:'BRA',Jogador:'Yuri Alberto',Idade:'25',Clube:'Corinthians','Valor Estimado':'32M €',Salário:'319m €',Minutos:'4575',Presenças:'53 (2)',HdJ:'6',Golos:'24','Assist.':'6',OCG:'14','Poss Con/90':'1.4','Poss Perd/90':'4.7',xG:'21.51',xA:'4.96','Faltas Cometidas':'41','Faltas Contra':'40','Pas A':'1245','Ps C':'1140','Passes Ch':'56',PeP:'26',Fnt:'26',Remates:'137','Rem %':'72','Cab A':'321',Cabs:'81','Press. tent.':'61','Press. conc.':'14','T Desa':'5','Des C':'4',Crt:'17','CT-JA':'15','CC-JA':'5','Cr T':'15','Cr C':'5',Blq:'4','Rems Bloq':'3',Alívios:'12','Crt D':'0',Amr:'0','Cartões vermelhos':'0',EPG:'0','Sprints/90':'6.7',Pens:'0','Pens M':'0',Distância:'541,1 km',Classificação:'6.87'},
+    {Nação:'BRA',Jogador:'Raniele',Idade:'29',Clube:'Corinthians','Valor Estimado':'5M €',Salário:'65,5m €',Minutos:'3769',Presenças:'43 (3)',HdJ:'0',Golos:'2','Assist.':'1',OCG:'4','Poss Con/90':'9.5','Poss Perd/90':'5',xG:'2.72',xA:'1.56','Faltas Cometidas':'29','Faltas Contra':'7','Pas A':'2427','Ps C':'2244','Passes Ch':'19',PeP:'258',Fnt:'4',Remates:'39','Rem %':'13','Cab A':'162',Cabs:'112','Press. tent.':'197','Press. conc.':'40','T Desa':'61','Des C':'45',Crt:'115','CT-JA':'3','CC-JA':'1','Cr T':'4','Cr C':'1',Blq:'22','Rems Bloq':'16',Alívios:'39','Crt D':'5',Amr:'4','Cartões vermelhos':'0',EPG:'0','Sprints/90':'9.7',Pens:'0','Pens M':'0',Distância:'463,8 km',Classificação:'6.91'},
+  ];
+  const map = { goleiros:gk, zagueiros:cb, laterais:fb, volantes:dm, b2b, armadores:amc, avancados:st, esforco:esf, time, overall:ov };
+  return map[pos] || null;
+}
+
+// Init
+loadFromStorage();
+(function() {
+  let saved = 'dark';
+  try { saved = localStorage.getItem('mb_theme') || 'dark'; } catch(e) {}
+  applyTheme(saved);
+})();
+render();
+setupScrollTopBtn();
+
+// Auto-detect position + auto-process on paste
+document.addEventListener('paste', () => {
+  setTimeout(() => {
+    const ta = document.getElementById('pasteArea');
+    if(!ta || ta.value.trim().length < 10) return;
+    const raw = ta.value.trim();
+    const parsed = smartParse(raw);
+    if(!parsed || parsed.data.length === 0) return;
+
+    // Find best matching position by header overlap
+    let bestPos = currentTab, bestCount = 0;
+    for(const [key, cfg] of Object.entries(POSITIONS)) {
+      const cnt = cfg.rawCols.filter(c => parsed.headers.includes(c)).length;
+      if(cnt > bestCount) { bestCount = cnt; bestPos = key; }
+    }
+
+    if(bestPos !== currentTab) {
+      currentTab = bestPos;
+      sortCol = '_moneyball'; sortDir = 'desc'; filterText = '';
+      renderTabs(); renderMain();
+      const newTa = document.getElementById('pasteArea');
+      if(newTa) newTa.value = raw;
+      showToast(`🎯 Posição detectada: ${POSITIONS[bestPos].name} — processando...`);
+    }
+    processData();
+  }, 200);
+});
+
+// Fechar modal com Escape
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>
