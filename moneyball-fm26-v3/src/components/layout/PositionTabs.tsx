@@ -11,8 +11,8 @@ export function PositionTabs({ playerCounts }: PositionTabsProps) {
 
   return (
     <nav
-      className="flex gap-1.5 py-3 overflow-x-auto"
-      style={{ borderBottom: '1px solid var(--color-border)' }}
+      className="flex gap-1 overflow-x-auto"
+      style={{ borderBottom: '1px solid var(--color-border)', paddingTop: '0.75rem', paddingBottom: '0.75rem', marginTop: '0.5rem' }}
     >
       {POSITION_ORDER.map((key) => {
         const meta = POSITION_META[key]
@@ -23,8 +23,10 @@ export function PositionTabs({ playerCounts }: PositionTabsProps) {
           <button
             key={key}
             onClick={() => setCurrentPosition(key as PositionKey)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm whitespace-nowrap transition-all cursor-pointer"
+            className="flex items-center gap-1.5 text-sm whitespace-nowrap transition-all cursor-pointer"
             style={{
+              padding: '0.5rem 0.875rem',
+              borderRadius: '0.375rem',
               backgroundColor: isActive ? 'var(--color-bg-tertiary)' : 'transparent',
               color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
               borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',

@@ -29,15 +29,18 @@ function App() {
         <PositionTabs playerCounts={playerCounts} />
 
         {/* View navigation */}
-        <nav className="flex gap-2 py-3 mt-1" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <nav className="flex gap-2" style={{ borderBottom: '1px solid var(--color-border)', paddingTop: '0.625rem', paddingBottom: '0.625rem' }}>
           {(['dashboard', 'charts', 'comparison'] as const).map((view) => {
             const labels = { dashboard: '📊 Dashboard', charts: '📈 Gráficos', comparison: '🔄 Comparação' }
             return (
               <button
                 key={view}
                 onClick={() => setActiveView(view)}
-                className="text-xs px-4 py-2 rounded-md cursor-pointer transition-colors"
+                className="cursor-pointer transition-colors"
                 style={{
+                  fontSize: '0.8rem',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.375rem',
                   backgroundColor: activeView === view ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
                   color: activeView === view ? '#fff' : 'var(--color-text-secondary)',
                 }}
@@ -48,7 +51,7 @@ function App() {
           })}
         </nav>
 
-        <div className="py-4">
+        <div style={{ paddingTop: '1.25rem', paddingBottom: '1.25rem' }}>
           <Suspense fallback={<div className="py-8" style={{ color: 'var(--color-text-muted)' }}>Carregando...</div>}>
             {activeView === 'dashboard' && <DashboardPage />}
             {activeView === 'charts' && <ChartsPage />}
