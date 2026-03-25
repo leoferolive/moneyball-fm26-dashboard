@@ -1,73 +1,94 @@
-# React + TypeScript + Vite
+# Moneyball FM26 Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Dashboard analítico para Football Manager 2026 com scoring personalizado, gráficos interativos e comparação de jogadores.
 
-Currently, two official plugins are available:
+Inspirado em plataformas como FBref, StatsBomb e Opta — foco em dados, limpeza visual e profundidade analítica.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **10 posições** — Goleiros, Zagueiros, Laterais, Volantes, B2B, Armadores, Avançados, Esforço, Time e Overall
+- **760+ métricas derivadas** — portadas fielmente da planilha Moneyball FM26.xlsm
+- **Scoring personalizado** — escolha métricas, ajuste pesos com sliders, salve perfis
+- **Importação flexível** — paste ou drag-and-drop de CSV/TSV com auto-detecção de formato e posição
+- **Tabela interativa** — sorting, heatmap condicional, zebra striping, modal de detalhes
+- **Gráficos** — Radar, Scatter Plot, Histograma de distribuição (Recharts)
+- **Comparação** — selecione 2-4 jogadores para radar overlay e tabela lado a lado
+- **Filtros avançados** — idade, minutos, nota FM, clube, nacionalidade, faixa de score
+- **Persistência** — dados salvos no IndexedDB (sobrevive refresh)
+- **Tema dark/light**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack
 
-## Expanding the ESLint configuration
+| Camada | Tecnologia |
+|--------|-----------|
+| Framework | React 19 + TypeScript |
+| Build | Vite |
+| Estilização | Tailwind CSS v4 |
+| Gráficos | Recharts |
+| Persistência | IndexedDB (Dexie.js) |
+| Estado | Zustand |
+| Virtual scroll | @tanstack/react-virtual |
+| Testes | Vitest |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+100% client-side — sem backend.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Quick Start
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# Instalar dependências
+npm install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Rodar em desenvolvimento
+npm run dev
+
+# Rodar testes
+npm test
+
+# Build para produção
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Acesse `http://localhost:5173` e cole dados exportados do FM26.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Como Usar
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. No Football Manager 26, exporte a view de jogadores (Ctrl+A → Ctrl+C)
+2. No dashboard, selecione a posição na aba correspondente
+3. Cole os dados no campo de importação (Ctrl+V) ou arraste um arquivo .csv/.tsv
+4. O sistema detecta automaticamente o separador (tab, ponto-e-vírgula, vírgula)
+5. Explore a tabela, aplique filtros, crie scoring personalizado ou compare jogadores
+
+## Arquitetura
+
 ```
+src/
+├── engine/          # Lógica pura: parser, derive, scorer, filters, statistics
+├── config/
+│   └── positions/   # 10 configs com todas as fórmulas (fonte: Moneyball FM26.xlsm)
+├── db/              # IndexedDB via Dexie.js
+├── hooks/           # React hooks customizados
+├── store/           # Zustand (estado UI)
+├── components/      # Componentes React organizados por domínio
+├── pages/           # Dashboard, Gráficos, Comparação
+└── types/           # TypeScript types
+```
+
+### Fluxo de Dados
+
+```
+Paste/CSV → smartParse() → detectPosition() → derive() → IndexedDB → UI
+                                                  ↓
+                                          scorer() ← ScoringProfile (pesos do usuário)
+```
+
+## Scoring Personalizado
+
+Diferente de um score fixo, o sistema permite que o usuário:
+- Selecione quais métricas compõem o ranking
+- Ajuste o peso de cada métrica via sliders (0-100)
+- Salve perfis de scoring no IndexedDB para reutilização
+- Compare diferentes perfis táticos (ex: "Zagueiro Aéreo" vs "Zagueiro Construtor")
+
+## Licença
+
+MIT

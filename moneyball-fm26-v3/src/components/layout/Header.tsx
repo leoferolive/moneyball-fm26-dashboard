@@ -10,8 +10,8 @@ export function Header() {
       style={{
         borderBottom: '1px solid var(--color-border)',
         backgroundColor: 'var(--color-bg-secondary)',
-        paddingLeft: 'clamp(1rem, 3vw, 3rem)',
-        paddingRight: 'clamp(1rem, 3vw, 3rem)',
+        paddingLeft: 'clamp(0.75rem, 2vw, 2rem)',
+        paddingRight: 'clamp(0.75rem, 2vw, 2rem)',
       }}
     >
       <div className="flex items-center gap-3">
