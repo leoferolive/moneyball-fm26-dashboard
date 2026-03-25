@@ -941,6 +941,38 @@ export const zagueirosConfig: PositionConfig = {
       format: 'number',
       decimals: 2,
     },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const cabA = pf(r['Cab A']), cabs = pf(r['Cabs'])
+        const desC = pf(r['Des C'])
+        const intcp = pf(r['Crt']), blq = pf(r['Blq']), remBlq = pf(r['Rems Bloq'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const epg = pf(r['EPG'])
+        const presT = pf(r['Press. tent.']), presC = pf(r['Press. conc.'])
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const aerS = clamp(sDiv(cabA, j90) / 5 * 100, 0, 100)
+        const apS = clamp(pct(cabA, cabs) / 65 * 100, 0, 100)
+        const defS = clamp(sDiv(desC, j90) / 4 * 100, 0, 100)
+        const intS = clamp(sDiv(intcp + blq + remBlq, j90) / 10 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 70) / 25 * 100, 0, 100)
+        const errS = clamp(100 - sDiv(epg, j90) * 50, 0, 100)
+        const prS = clamp(pct(presC, presT) / 35 * 100, 0, 100)
+        const m = aerS * 0.15 + apS * 0.10 + defS * 0.20 + intS * 0.20 + pssS * 0.15 + errS * 0.10 + prS * 0.10
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 
   defaultTableColumns: [

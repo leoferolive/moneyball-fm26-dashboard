@@ -222,6 +222,39 @@ export const esforcoConfig: PositionConfig = {
       format: 'number',
       decimals: 2,
     },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const dist = pf(r['Distância'])
+        const distP90 = sDiv(dist, j90)
+        const presT = pf(r['Press. tent.'])
+        const presC = pf(r['Press. conc.'])
+        const desC = pf(r['Des C'])
+        const desDecPer90 = pf(r['Des Dec/90'])
+        const epg = pf(r['EPG'])
+
+        const effortScore = rnd(
+          (dist / 100) * 10 +
+          (distP90 / 12) * 10 +
+          (presT / 100) * 10 +
+          (presC / 50) * 10 +
+          (sDiv(desC, j90) * 10) +
+          ((desDecPer90 / 0.1) * 10) +
+          (epg * -10),
+        )
+        return clamp(rnd(effortScore / 2), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Placar de esforço da planilha original (effortScore / 2)',
+    },
   ],
 
   defaultTableColumns: [

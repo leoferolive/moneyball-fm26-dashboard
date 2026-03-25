@@ -15,6 +15,12 @@ export function computeScore(
   profile: ScoringProfile,
   stats: Record<string, ColumnStats>,
 ): number {
+  // Scoring absoluto: lê _moneyball pré-calculado no derive()
+  if (profile.isAbsolute) {
+    const mb = typeof player['_moneyball'] === 'number' ? (player['_moneyball'] as number) : 0
+    return clamp(Math.round(mb * 100) / 100, 0, 100)
+  }
+
   if (profile.weights.length === 0) return 0
 
   let weightedSum = 0

@@ -329,5 +329,101 @@ export const avancadosConfig: PositionConfig = {
     // ── NOTA ──
     { key: 'notaMedia', label: 'Nota Média', category: 'general', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
       formula: (r, ctx) => ctx.pf(r['Classificação']) },
+
+    // ── Métricas adicionais da planilha ────────────────────────
+    {
+      key: 'remSemPen90',
+      label: 'Rem sem Pen/90',
+      category: 'shooting',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']) - ctx.pf(r['Pens']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Remates (excluindo pênaltis) por 90 minutos',
+    },
+    {
+      key: 'minPorGol',
+      label: 'Min/Gol',
+      category: 'attacking',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Minutos']), ctx.pf(r['Golos'])),
+      displayInTable: false,
+      lowerIsBetter: true,
+      format: 'number',
+      decimals: 0,
+      description: 'Minutos para marcar um gol (menor é melhor)',
+    },
+    {
+      key: 'conversaoSemPen',
+      label: 'Conversão sem Pen %',
+      category: 'shooting',
+      formula: (r, ctx) => {
+        const { pf, pct } = ctx
+        return pct(pf(r['Golos']) - pf(r['Pens M']), pf(r['Remates']) - pf(r['Pens']))
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'percentage',
+      decimals: 1,
+      description: 'Taxa de conversão excluindo pênaltis',
+    },
+    {
+      key: 'overUnderXGAbs',
+      label: 'Over/Under xG (abs)',
+      category: 'attacking',
+      formula: (r, ctx) => {
+        const { pf, rnd } = ctx
+        const golsSP = pf(r['Golos']) - pf(r['Pens M'])
+        const xgSP = pf(r['xG']) - pf(r['Pens']) * 0.79
+        return rnd(golsSP - xgSP)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Diferença absoluta gols sem pen vs npxG (fórmula planilha)',
+    },
+    {
+      key: 'pressaoT90',
+      label: 'Pressão T/90',
+      category: 'pressing',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Press. tent.']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+    },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const gols = pf(r['Golos']), xa = pf(r['xA'])
+        const xg = pf(r['xG']), pens = pf(r['Pens']), pensM = pf(r['Pens M'])
+        const rem = pf(r['Remates']), remC = pf(r['Rem %'])
+        const presT = pf(r['Press. tent.'])
+        const xgSP = xg - pens * 0.79
+        const golsSP = gols - pensM
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const g9S = clamp(sDiv(gols, j90) / 0.5 * 100, 0, 100)
+        const ngS = clamp(sDiv(xgSP, j90) / 0.4 * 100, 0, 100)
+        const cvS = clamp(pct(golsSP, rem - pens) / 15 * 100, 0, 100)
+        const xaS = clamp(sDiv(xa, j90) / 0.15 * 100, 0, 100)
+        const rgS = clamp(remC / 40 * 100, 0, 100)
+        const ouS = clamp((golsSP - xgSP + 3) / 6 * 100, 0, 100)
+        const prS = clamp(sDiv(presT, j90) / 5 * 100, 0, 100)
+        const m = g9S * 0.25 + ngS * 0.20 + cvS * 0.15 + xaS * 0.10 + rgS * 0.10 + ouS * 0.10 + prS * 0.10
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 }

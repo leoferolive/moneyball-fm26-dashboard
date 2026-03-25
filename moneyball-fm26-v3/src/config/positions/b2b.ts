@@ -245,5 +245,75 @@ export const b2bConfig: PositionConfig = {
     // ── NOTA ──
     { key: 'notaMedia', label: 'Nota Média', category: 'general', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
       formula: (r, ctx) => ctx.pf(r['Classificação']) },
+
+    // ── Métricas adicionais da planilha ────────────────────────
+    {
+      key: 'fintas90',
+      label: 'Fintas/90',
+      category: 'physical',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Fnt']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+    },
+    {
+      key: 'pctPressao',
+      label: '% Pressão',
+      category: 'pressing',
+      formula: (r, ctx) => ctx.pct(ctx.pf(r['Press. conc.']), ctx.pf(r['Press. tent.'])),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'percentage',
+      decimals: 1,
+    },
+    {
+      key: 'xGxA90',
+      label: 'xG+xA/90',
+      category: 'attacking',
+      formula: (r, ctx) => {
+        const { pf, sDiv } = ctx
+        return sDiv(pf(r['xG']) - pf(r['Pens']) * 0.79 + pf(r['xA']), ctx.j90)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+    },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const xg = pf(r['xG']), xa = pf(r['xA']), pens = pf(r['Pens'])
+        const desC = pf(r['Des C'])
+        const presT = pf(r['Press. tent.']), presC = pf(r['Press. conc.'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const passD = pf(r['Passes Ch'])
+        const fnt = pf(r['Fnt'])
+        const xgSP = xg - pens * 0.79
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const ngS = clamp(sDiv(xgSP, j90) / 0.3 * 100, 0, 100)
+        const xaS = clamp(sDiv(xa, j90) / 0.2 * 100, 0, 100)
+        const gxS = clamp(sDiv(xgSP + xa, j90) / 0.5 * 100, 0, 100)
+        const defS = clamp(sDiv(desC, j90) / 2.5 * 100, 0, 100)
+        const pcS = clamp(sDiv(presC, j90) / 3 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 70) / 25 * 100, 0, 100)
+        const pdS = clamp(sDiv(passD, j90) / 2 * 100, 0, 100)
+        const fnS = clamp(sDiv(fnt, j90) / 2 * 100, 0, 100)
+        const ppS = clamp(pct(presC, presT) / 30 * 100, 0, 100)
+        const m = ngS * 0.20 + xaS * 0.15 + gxS * 0.10 + defS * 0.15 + pcS * 0.10 + pssS * 0.10 + pdS * 0.10 + fnS * 0.05 + ppS * 0.05
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 }
