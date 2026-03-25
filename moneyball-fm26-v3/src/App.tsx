@@ -25,7 +25,7 @@ function App() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
       <Header />
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+      <div style={{ maxWidth: '1440px', margin: '0 auto', paddingLeft: 'clamp(1rem, 3vw, 3rem)', paddingRight: 'clamp(1rem, 3vw, 3rem)' }}>
         <PositionTabs playerCounts={playerCounts} />
 
         {/* View navigation */}
