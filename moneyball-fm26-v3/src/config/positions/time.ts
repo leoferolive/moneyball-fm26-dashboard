@@ -637,6 +637,21 @@ export const timeConfig: PositionConfig = {
       format: 'number',
       decimals: 2,
     },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, clamp, rnd } = ctx
+        return clamp(rnd(pf(r['Classificação']) * 10), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score da planilha original (Nota FM x 10)',
+    },
   ],
 
   defaultTableColumns: [

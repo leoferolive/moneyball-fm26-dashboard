@@ -7,47 +7,67 @@ export interface Preset {
   description: string
   positionKey: PositionKey
   weights: WeightedMetric[]
+  isAbsolute?: boolean
 }
+
+// ── Moneyball Original (scoring absoluto da planilha) ──────────
+
+const moneyballPresets: Preset[] = [
+  { id: 'mb-goleiros', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'goleiros', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-zagueiros', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'zagueiros', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-laterais', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'laterais', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-volantes', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'volantes', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-b2b', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'b2b', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-armadores', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'armadores', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-avancados', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'avancados', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-esforco', name: 'Moneyball Original', description: 'Placar de esforço da planilha original', positionKey: 'esforco', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-time', name: 'Moneyball Original', description: 'Nota FM x10 da planilha original', positionKey: 'time', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+  { id: 'mb-overall', name: 'Moneyball Original', description: 'Nota FM x10 da planilha original', positionKey: 'overall', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
+]
+
+// ── Goleiros ───────────────────────────────────────────────────
 
 const goleirosPresets: Preset[] = [
   {
     id: 'gk-defensor', name: 'Goleiro Defensor', description: 'Foco em defesas, reflexos e clean sheets',
     positionKey: 'goleiros',
     weights: [
-      { metricKey: 'defTotais90', weight: 80 },
-      { metricKey: 'pctDefSeguras', weight: 60 },
-      { metricKey: 'indiceDefCriticas', weight: 90 },
-      { metricKey: 'pctCleanSheet', weight: 70 },
-      { metricKey: 'xGDef90', weight: 85 },
-      { metricKey: 'minSofrerGol', weight: 60 },
-      { metricKey: 'falhas90', weight: 40 },
+      { metricKey: 'defesas_totais_jogo', weight: 80 },
+      { metricKey: 'pct_def_seguras', weight: 60 },
+      { metricKey: 'indice_defesas_criticas', weight: 90 },
+      { metricKey: 'pct_jogos_clean_sheet', weight: 70 },
+      { metricKey: 'xg_def_90', weight: 85 },
+      { metricKey: 'min_p_sofrer_gol', weight: 60 },
+      { metricKey: 'falhas_90', weight: 40 },
     ],
   },
   {
     id: 'gk-construtor', name: 'Goleiro Construtor', description: 'Foco em passes, distribuição e saída de jogo',
     positionKey: 'goleiros',
     weights: [
-      { metricKey: 'pctPassesCertos', weight: 90 },
-      { metricKey: 'passesC90', weight: 70 },
-      { metricKey: 'passProgr90', weight: 80 },
-      { metricKey: 'passD90', weight: 60 },
-      { metricKey: 'possePerd90', weight: 50 },
-      { metricKey: 'pctCleanSheet', weight: 40 },
-      { metricKey: 'xGDef90', weight: 50 },
+      { metricKey: 'pct_passes_certos', weight: 90 },
+      { metricKey: 'passes_c_90', weight: 70 },
+      { metricKey: 'pass_prog_90', weight: 80 },
+      { metricKey: 'pass_d_90', weight: 60 },
+      { metricKey: 'posse_perdida_90', weight: 50 },
+      { metricKey: 'pct_jogos_clean_sheet', weight: 40 },
+      { metricKey: 'xg_def_90', weight: 50 },
     ],
   },
   {
     id: 'gk-penalti', name: 'Goleiro Pegador de Pênalti', description: 'Foco em defesas de pênalti e 1v1',
     positionKey: 'goleiros',
     weights: [
-      { metricKey: 'pctPenDef', weight: 100 },
-      { metricKey: 'indiceDefCriticas', weight: 80 },
-      { metricKey: 'pctDefDificeis', weight: 70 },
-      { metricKey: 'xGP', weight: 60 },
-      { metricKey: 'defTotais90', weight: 50 },
+      { metricKey: 'pct_penaltis_def', weight: 100 },
+      { metricKey: 'indice_defesas_criticas', weight: 80 },
+      { metricKey: 'pct_def_dificeis', weight: 70 },
+      { metricKey: 'xgp', weight: 60 },
+      { metricKey: 'defesas_totais_jogo', weight: 50 },
     ],
   },
 ]
+
+// ── Zagueiros ──────────────────────────────────────────────────
 
 const zagueirosPresets: Preset[] = [
   {
@@ -55,7 +75,7 @@ const zagueirosPresets: Preset[] = [
     positionKey: 'zagueiros',
     weights: [
       { metricKey: 'cabsG90', weight: 100 },
-      { metricKey: 'pctCabs', weight: 90 },
+      { metricKey: 'pctCabsGanhos', weight: 90 },
       { metricKey: 'alivios90', weight: 60 },
       { metricKey: 'desG90', weight: 50 },
       { metricKey: 'interceptacoes90', weight: 50 },
@@ -67,7 +87,7 @@ const zagueirosPresets: Preset[] = [
     positionKey: 'zagueiros',
     weights: [
       { metricKey: 'pctPassesCertos', weight: 90 },
-      { metricKey: 'passesProgr90', weight: 80 },
+      { metricKey: 'passProg90', weight: 80 },
       { metricKey: 'passD90', weight: 70 },
       { metricKey: 'desG90', weight: 50 },
       { metricKey: 'cabsG90', weight: 40 },
@@ -79,7 +99,7 @@ const zagueirosPresets: Preset[] = [
     positionKey: 'zagueiros',
     weights: [
       { metricKey: 'desG90', weight: 100 },
-      { metricKey: 'pctDes', weight: 80 },
+      { metricKey: 'pctDesGanhos', weight: 80 },
       { metricKey: 'interceptacoes90', weight: 90 },
       { metricKey: 'alivios90', weight: 70 },
       { metricKey: 'pressaoG90', weight: 60 },
@@ -88,6 +108,8 @@ const zagueirosPresets: Preset[] = [
   },
 ]
 
+// ── Laterais ───────────────────────────────────────────────────
+
 const lateraisPresets: Preset[] = [
   {
     id: 'fb-ofensivo', name: 'Lateral Ofensivo', description: 'Cruzamentos, assistências e participação ofensiva',
@@ -95,7 +117,7 @@ const lateraisPresets: Preset[] = [
     weights: [
       { metricKey: 'xA90', weight: 100 },
       { metricKey: 'cruzC90', weight: 80 },
-      { metricKey: 'pctCruz', weight: 60 },
+      { metricKey: 'pctCruzamentos', weight: 60 },
       { metricKey: 'chances90', weight: 90 },
       { metricKey: 'fintas90', weight: 50 },
       { metricKey: 'passD90', weight: 70 },
@@ -108,10 +130,10 @@ const lateraisPresets: Preset[] = [
     weights: [
       { metricKey: 'xA90', weight: 70 },
       { metricKey: 'desG90', weight: 70 },
-      { metricKey: 'pctDes', weight: 60 },
+      { metricKey: 'pctDesGanhos', weight: 60 },
       { metricKey: 'cruzC90', weight: 60 },
       { metricKey: 'pctPassesCertos', weight: 60 },
-      { metricKey: 'eficaciaDef', weight: 50 },
+      { metricKey: 'eficaciaDefensiva', weight: 50 },
       { metricKey: 'dist90', weight: 50 },
     ],
   },
@@ -120,14 +142,16 @@ const lateraisPresets: Preset[] = [
     positionKey: 'laterais',
     weights: [
       { metricKey: 'desG90', weight: 100 },
-      { metricKey: 'pctDes', weight: 80 },
-      { metricKey: 'eficaciaDef', weight: 90 },
+      { metricKey: 'pctDesGanhos', weight: 80 },
+      { metricKey: 'eficaciaDefensiva', weight: 90 },
       { metricKey: 'cabsG90', weight: 50 },
       { metricKey: 'pctPassesCertos', weight: 40 },
       { metricKey: 'erros90', weight: 60 },
     ],
   },
 ]
+
+// ── Volantes ───────────────────────────────────────────────────
 
 const volantesPresets: Preset[] = [
   {
@@ -171,6 +195,8 @@ const volantesPresets: Preset[] = [
   },
 ]
 
+// ── Box-to-Box ─────────────────────────────────────────────────
+
 const b2bPresets: Preset[] = [
   {
     id: 'b2b-ofensivo', name: 'B2B Ofensivo', description: 'Chegada ao ataque, gols e assistências',
@@ -212,6 +238,8 @@ const b2bPresets: Preset[] = [
   },
 ]
 
+// ── Armadores ──────────────────────────────────────────────────
+
 const armadoresPresets: Preset[] = [
   {
     id: 'amc-criativo', name: 'Meia Criativo', description: 'Passes decisivos, chances criadas e xA',
@@ -251,6 +279,8 @@ const armadoresPresets: Preset[] = [
     ],
   },
 ]
+
+// ── Avançados ──────────────────────────────────────────────────
 
 const avancadosPresets: Preset[] = [
   {
@@ -292,6 +322,8 @@ const avancadosPresets: Preset[] = [
   },
 ]
 
+// ── Esforço ────────────────────────────────────────────────────
+
 const esforcoPresets: Preset[] = [
   {
     id: 'esf-intenso', name: 'Intensidade Máxima', description: 'Distância, sprints e pressão',
@@ -299,13 +331,15 @@ const esforcoPresets: Preset[] = [
     weights: [
       { metricKey: 'dist90', weight: 80 },
       { metricKey: 'sprints90', weight: 90 },
-      { metricKey: 'pressaoT90', weight: 70 },
-      { metricKey: 'pressaoC90', weight: 80 },
-      { metricKey: 'desC90', weight: 60 },
+      { metricKey: 'pressoesT90', weight: 70 },
+      { metricKey: 'pressoesC90', weight: 80 },
+      { metricKey: 'desarmesC90', weight: 60 },
       { metricKey: 'erros90', weight: 40 },
     ],
   },
 ]
+
+// ── Time ───────────────────────────────────────────────────────
 
 const timePresets: Preset[] = [
   {
@@ -314,7 +348,7 @@ const timePresets: Preset[] = [
     weights: [
       { metricKey: 'gols90', weight: 100 },
       { metricKey: 'ast90', weight: 80 },
-      { metricKey: 'npxG90', weight: 70 },
+      { metricKey: 'npxg90', weight: 70 },
       { metricKey: 'xA90', weight: 70 },
       { metricKey: 'passD90', weight: 50 },
     ],
@@ -326,10 +360,12 @@ const timePresets: Preset[] = [
       { metricKey: 'desG90', weight: 100 },
       { metricKey: 'cabsG90', weight: 80 },
       { metricKey: 'pctPassesCertos', weight: 60 },
-      { metricKey: 'faltas90', weight: 50 },
+      { metricKey: 'falhas90', weight: 50 },
     ],
   },
 ]
+
+// ── Overall ────────────────────────────────────────────────────
 
 const overallPresets: Preset[] = [
   {
@@ -359,7 +395,10 @@ const overallPresets: Preset[] = [
   },
 ]
 
+// ── Export ──────────────────────────────────────────────────────
+
 const allPresets: Preset[] = [
+  ...moneyballPresets,
   ...goleirosPresets, ...zagueirosPresets, ...lateraisPresets,
   ...volantesPresets, ...b2bPresets, ...armadoresPresets,
   ...avancadosPresets, ...esforcoPresets, ...timePresets, ...overallPresets,

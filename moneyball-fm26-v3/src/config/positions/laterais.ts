@@ -979,6 +979,40 @@ export const lateraisConfig: PositionConfig = {
       format: 'number',
       decimals: 2,
     },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const xa = pf(r['xA'])
+        const desC = pf(r['Des C'])
+        const crT = pf(r['Cr T']), crC = pf(r['Cr C'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const passD = pf(r['Passes Ch'])
+        const presT = pf(r['Press. tent.']), presC = pf(r['Press. conc.'])
+        const fnt = pf(r['Fnt'])
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const xaS = clamp(sDiv(xa, j90) / 0.25 * 100, 0, 100)
+        const defS = clamp(sDiv(desC, j90) / 3 * 100, 0, 100)
+        const crS = clamp(sDiv(crT, j90) / 5 * 100, 0, 100)
+        const cpS = clamp(pct(crC, crT) / 25 * 100, 0, 100)
+        const pdS = clamp(sDiv(passD, j90) / 2.5 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 65) / 25 * 100, 0, 100)
+        const prS = clamp(pct(presC, presT) / 30 * 100, 0, 100)
+        const fnS = clamp(sDiv(fnt, j90) / 2 * 100, 0, 100)
+        const m = xaS * 0.25 + defS * 0.15 + crS * 0.10 + cpS * 0.10 + pdS * 0.15 + pssS * 0.10 + prS * 0.10 + fnS * 0.05
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 
   defaultTableColumns: [

@@ -1160,5 +1160,37 @@ export const goleirosConfig: PositionConfig = {
       decimals: 2,
       description: 'Nota média do FM26 (Classificação)',
     },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const gs = pf(r['Golos Sofridos'])
+        const ds = pf(r['Ds']), dft = pf(r['Dft']), dfa = pf(r['Dfa'])
+        const cs = pf(r['Sem golos sofridos'])
+        const xgd = pf(r['xGD'])
+        const epg = pf(r['EPG'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const defTotal = ds + dft + dfa
+        const bolasEnf = dft + dfa + ds + gs
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const defS = clamp(pct(defTotal, bolasEnf) / 75 * 100, 0, 100)
+        const xgpS = clamp(pct(xgd, xgd + gs) / 50 * 100, 0, 100)
+        const csS = clamp(pct(cs, j90) / 40 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 60) / 30 * 100, 0, 100)
+        const errS = clamp(100 - sDiv(epg, j90) * 40, 0, 100)
+        const m = defS * 0.30 + xgpS * 0.25 + csS * 0.20 + pssS * 0.15 + errS * 0.10
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 }

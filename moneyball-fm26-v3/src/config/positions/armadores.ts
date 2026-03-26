@@ -247,5 +247,82 @@ export const armadoresConfig: PositionConfig = {
     // ── NOTA ──
     { key: 'notaMedia', label: 'Nota Média', category: 'general', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
       formula: (r, ctx) => ctx.pf(r['Classificação']) },
+
+    // ── Métricas adicionais da planilha ────────────────────────
+    {
+      key: 'bpChances90',
+      label: 'BP Chances/90',
+      category: 'creation',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['CC-JA']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Big Play chances criadas por 90 minutos',
+    },
+    {
+      key: 'cruzT90',
+      label: 'Cruz T/90',
+      category: 'creation',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cr T']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+    },
+    {
+      key: 'pctCruz',
+      label: '% Cruz',
+      category: 'creation',
+      formula: (r, ctx) => ctx.pct(ctx.pf(r['Cr C']), ctx.pf(r['Cr T'])),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'percentage',
+      decimals: 1,
+    },
+    {
+      key: 'chancesCriadas90',
+      label: 'Chances Criadas/90',
+      category: 'creation',
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch']), ctx.j90),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Chances criadas por 90 min (fórmula planilha: OCG + Passes Ch)',
+    },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const xg = pf(r['xG']), xa = pf(r['xA']), pens = pf(r['Pens'])
+        const ocg = pf(r['OCG'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const passD = pf(r['Passes Ch'])
+        const fnt = pf(r['Fnt'])
+        const ccJA = pf(r['CC-JA'])
+        const xgSP = xg - pens * 0.79
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const xaS = clamp(sDiv(xa, j90) / 0.35 * 100, 0, 100)
+        const ngS = clamp(sDiv(xgSP, j90) / 0.2 * 100, 0, 100)
+        const chS = clamp(sDiv(ocg + passD, j90) / 4 * 100, 0, 100)
+        const pdS = clamp(sDiv(passD, j90) / 3 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 70) / 25 * 100, 0, 100)
+        const fnS = clamp(sDiv(fnt, j90) / 3 * 100, 0, 100)
+        const bpS = clamp(sDiv(ccJA, j90) * 100, 0, 100)
+        const m = xaS * 0.30 + ngS * 0.15 + chS * 0.20 + pdS * 0.15 + pssS * 0.10 + fnS * 0.05 + bpS * 0.05
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 }

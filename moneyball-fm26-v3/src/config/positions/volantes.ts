@@ -235,5 +235,40 @@ export const volantesConfig: PositionConfig = {
     // ── NOTA ──
     { key: 'notaMedia', label: 'Nota Média', category: 'general', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
       formula: (r, ctx) => ctx.pf(r['Classificação']) },
+    // ── Moneyball Score (planilha original) ────────────────────
+    {
+      key: '_moneyball',
+      label: 'Moneyball Score',
+      category: 'general',
+      formula: (r, ctx) => {
+        const { pf, pct, sDiv, clamp, rnd } = ctx
+        const j90 = ctx.j90
+        const desC = pf(r['Des C'])
+        const desT = pf(r['T Desa']) + pf(r['Faltas Cometidas'])
+        const intcp = pf(r['Crt']), blq = pf(r['Blq']), remBlq = pf(r['Rems Bloq'])
+        const aliv = pf(r['Alívios']), crtD = pf(r['Crt D'])
+        const presT = pf(r['Press. tent.']), presC = pf(r['Press. conc.'])
+        const pasA = pf(r['Pas A']), pasC = pf(r['Ps C'])
+        const passD = pf(r['Passes Ch'])
+        const xa = pf(r['xA'])
+
+        const fm = clamp((pf(r['Classificação']) - 5) / 3 * 100, 0, 100)
+        const defS = clamp(sDiv(desC, j90) / 3 * 100, 0, 100)
+        const dpS = clamp(pct(desC, desT) / 60 * 100, 0, 100)
+        const irS = clamp(sDiv(intcp + blq + remBlq + aliv + crtD, j90) / 12 * 100, 0, 100)
+        const p9S = clamp(sDiv(presT, j90) / 8 * 100, 0, 100)
+        const ppS = clamp(pct(presC, presT) / 30 * 100, 0, 100)
+        const pssS = clamp((pct(pasC, pasA) - 70) / 25 * 100, 0, 100)
+        const pdS = clamp(sDiv(passD, j90) / 1.5 * 100, 0, 100)
+        const xaS = clamp(sDiv(xa, j90) / 0.15 * 100, 0, 100)
+        const m = defS * 0.20 + dpS * 0.10 + irS * 0.20 + p9S * 0.10 + ppS * 0.10 + pssS * 0.15 + pdS * 0.10 + xaS * 0.05
+        return clamp(rnd(fm * 0.35 + m * 0.65), 0, 100)
+      },
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'number',
+      decimals: 2,
+      description: 'Score Moneyball da planilha original (FM 35% + Métricas 65%)',
+    },
   ],
 }

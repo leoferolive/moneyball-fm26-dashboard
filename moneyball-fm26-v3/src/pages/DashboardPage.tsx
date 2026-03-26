@@ -28,6 +28,7 @@ export function DashboardPage() {
   const [players, setPlayers] = useState<DerivedPlayer[]>([])
   const [selectedPlayer, setSelectedPlayer] = useState<DerivedPlayer | null>(null)
   const [activeWeights, setActiveWeights] = useState<WeightedMetric[]>([])
+  const [isAbsoluteScoring, setIsAbsoluteScoring] = useState(false)
 
   const config = positionConfigs[currentPosition]
   const { loading, error, importData, lastResult } = useImport(positionConfigs)
@@ -52,11 +53,12 @@ export function DashboardPage() {
       positionKey: currentPosition,
       weights: activeWeights,
       isBuiltIn: false,
+      isAbsolute: isAbsoluteScoring,
       createdAt: 0,
       updatedAt: 0,
     }
     setPlayers(computeScoresForAll(rawPlayers, profile, stats))
-  }, [rawPlayers, activeWeights, currentPosition])
+  }, [rawPlayers, activeWeights, isAbsoluteScoring, currentPosition])
 
   // Filter & sort
   const { filters, filteredPlayers, updateFilter, resetFilters } = useFilters(players)
@@ -84,8 +86,9 @@ export function DashboardPage() {
     [importData],
   )
 
-  const handleProfileChange = useCallback((weights: WeightedMetric[]) => {
+  const handleProfileChange = useCallback((weights: WeightedMetric[], absolute?: boolean) => {
     setActiveWeights(weights)
+    setIsAbsoluteScoring(absolute ?? false)
   }, [])
 
   return (

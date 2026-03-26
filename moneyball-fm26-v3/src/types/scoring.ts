@@ -13,4 +13,5 @@ export interface ScoringProfile {
   isBuiltIn: boolean
   createdAt: number
   updatedAt: number
+  isAbsolute?: boolean  // scoring absoluto da planilha
 }
