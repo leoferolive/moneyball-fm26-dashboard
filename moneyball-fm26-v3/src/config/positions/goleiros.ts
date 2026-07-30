@@ -26,18 +26,18 @@ export const goleirosConfig: PositionConfig = {
 
   defaultTableColumns: [
     'Jogos completos',
-    'Defesas Totais/Jogo',
-    '% Def Seguras',
-    'xG Def/90',
-    '% Jogos Clean Sheet',
     '% Passes Certos',
+    '% Def Seguras',
+    '% Jogos Clean Sheet',
+    'Defesas Totais/Jogo',
+    'Índice Defesas Críticas',
     'Min p/ Sofrer Gol',
-    'Falhas/90',
+    'xG Def/90',
+    '% Pênaltis Def',
     'Posse Ganha/90',
+    'Falhas/90',
     '% Acerto Goleiro',
     'Nota Média',
-    '% Pênaltis Def',
-    'Índice Defesas Críticas',
   ],
 
   metrics: [
@@ -47,12 +47,11 @@ export const goleirosConfig: PositionConfig = {
       label: 'Jogos completos',
       category: 'general',
       formula: (_r, ctx) => {
-        return ctx.rnd(ctx.j90, 1)
+        return ctx.j90
       },
       displayInTable: true,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 1,
+      format: 'integer',
       description: 'Jogos completos (Minutos / 90)',
     },
     {
@@ -95,7 +94,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
       description: 'Percentual de jogos como Homem do Jogo',
     },
 
@@ -135,7 +134,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'passes_errados',
@@ -212,7 +211,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'passes_progressao',
@@ -237,7 +236,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'pct_passes_progressao',
@@ -250,15 +249,15 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'posse_perdida_total',
       label: 'Posse Perdida Total',
       category: 'passing',
       formula: (r, ctx) => {
-        const { pf, rnd } = ctx
-        return rnd(pf(r['Poss Perd/90']) * ctx.j90, 0)
+        const { pf } = ctx
+        return pf(r['Poss Perd/90']) * ctx.j90
       },
       displayInTable: false,
       lowerIsBetter: true,
@@ -343,7 +342,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: true,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
       description: 'Percentual de defesas seguras sobre total de defesas',
     },
     {
@@ -383,7 +382,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'defesas_desviadas',
@@ -403,7 +402,8 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf, sDiv } = ctx
-        return sDiv(pf(r['Dfa']), ctx.j90)
+        const passesCompletados90 = sDiv(pf(r['Ps C']), ctx.j90)
+        return sDiv(pf(r['Dfa']), passesCompletados90)
       },
       displayInTable: false,
       lowerIsBetter: false,
@@ -422,7 +422,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'pct_jogos_clean_sheet',
@@ -435,7 +435,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: true,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
       description: 'Percentual de jogos sem sofrer gol',
     },
     {
@@ -521,15 +521,15 @@ export const goleirosConfig: PositionConfig = {
       label: 'Proporção Def vs Chutes',
       category: 'goalkeeping',
       formula: (r, ctx) => {
-        const { pf, sDiv } = ctx
+        const { pf, pct } = ctx
         const defTotais = pf(r['Ds']) + pf(r['Dft']) + pf(r['Dfa'])
         const bolasEnf = defTotais + pf(r['Golos Sofridos'])
-        return sDiv(defTotais, bolasEnf)
+        return pct(defTotais, bolasEnf)
       },
       displayInTable: false,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 3,
+      format: 'percentage',
+      decimals: 2,
     },
     {
       key: 'pct_def_dificeis',
@@ -552,15 +552,14 @@ export const goleirosConfig: PositionConfig = {
       label: 'Chances Sofrer Gol/90',
       category: 'goalkeeping',
       formula: (r, ctx) => {
-        const { pf, sDiv } = ctx
+        const { pf, pct } = ctx
         const bolasEnf = pf(r['Ds']) + pf(r['Dft']) + pf(r['Dfa']) + pf(r['Golos Sofridos'])
-        const result = sDiv(pf(r['Golos Sofridos']), bolasEnf)
-        return result === 0 ? 1 : result
+        return bolasEnf === 0 ? 100 : pct(pf(r['Golos Sofridos']), bolasEnf)
       },
       displayInTable: false,
       lowerIsBetter: true,
-      format: 'number',
-      decimals: 3,
+      format: 'percentage',
+      decimals: 1,
       description: 'Proporção de gols sofridos por bolas enfrentadas (menor é melhor)',
     },
     {
@@ -576,7 +575,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 3,
+      decimals: 2,
       description: 'Índice ponderado de defesas críticas (Dft*2 + Dfa*1.5 + Ds) / bolas enfrentadas',
     },
     {
@@ -590,7 +589,7 @@ export const goleirosConfig: PositionConfig = {
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 0,
+      decimals: 1,
       description: 'Minutos jogados para cada gol sofrido (maior é melhor)',
     },
     {
@@ -654,6 +653,7 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf } = ctx
+        if (!r['xGD'] || r['xGD'].trim() === '-') return -100
         return pf(r['xGD']) - pf(r['Pen. Defendidos']) * 0.79
       },
       displayInTable: false,
@@ -667,7 +667,9 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf, sDiv } = ctx
-        const xgDSemPen = pf(r['xGD']) - pf(r['Pen. Defendidos']) * 0.79
+        const xgDSemPen = !r['xGD'] || r['xGD'].trim() === '-'
+          ? -100
+          : pf(r['xGD']) - pf(r['Pen. Defendidos']) * 0.79
         return sDiv(xgDSemPen, ctx.j90)
       },
       displayInTable: false,
@@ -681,28 +683,28 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf, sDiv } = ctx
-        const xgDSemPen = pf(r['xGD']) - pf(r['Pen. Defendidos']) * 0.79
-        const golosSofridos = pf(r['Golos Sofridos'])
-        return golosSofridos === 0 ? xgDSemPen : sDiv(xgDSemPen, golosSofridos)
+        const xgDef90 = sDiv(pf(r['xGD']), ctx.j90)
+        const cleanSheets = pf(r['Sem golos sofridos'])
+        return cleanSheets === 0 ? xgDef90 : sDiv(pf(r['xGD']), cleanSheets)
       },
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 3,
-      description: 'Razão entre xG defendidos (sem pênaltis) e gols sofridos',
+      decimals: 2,
+      description: 'Razão entre xG defendidos/90 e clean sheets/90',
     },
     {
       key: 'xgp',
       label: 'xGP (Expected Goals Prevented)',
       category: 'goalkeeping',
       formula: (r, ctx) => {
-        const { pf, sDiv } = ctx
-        return sDiv(pf(r['xGD']), pf(r['xGD']) + pf(r['Golos Sofridos']))
+        const { pf, pct } = ctx
+        return pct(pf(r['xGD']), pf(r['xGD']) + pf(r['Golos Sofridos']))
       },
       displayInTable: false,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 3,
+      format: 'percentage',
+      decimals: 2,
       description: 'Proporção de xG defendidos sobre total (xGD + Golos Sofridos)',
     },
     {
@@ -763,7 +765,7 @@ export const goleirosConfig: PositionConfig = {
         const { pf, pct } = ctx
         const enfrentados = pf(r['Pen. Enfrentados'])
         const defendidos = pf(r['Pen. Defendidos'])
-        if (enfrentados === 0 && defendidos === 0) return -0.01
+        if (enfrentados === 0 && defendidos === 0) return -0.0000000001
         return pct(defendidos, enfrentados)
       },
       displayInTable: true,
@@ -803,13 +805,12 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf } = ctx
-        return pf(r['Crt D']) + pf(r['T Desa']) + pf(r['Des C']) * 2.5
-          + pf(r['Faltas Cometidas']) + pf(r['EPG'])
+        return pf(r['Press. tent.']) + pf(r['T Desa']) + pf(r['Crt D']) * 2.5
+          + pf(r['Amr']) + pf(r['EPG'])
       },
       displayInTable: false,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 1,
+      format: 'integer',
     },
     {
       key: 'tentativas_saida_90',
@@ -817,8 +818,8 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf, sDiv } = ctx
-        const tentativas = pf(r['Crt D']) + pf(r['T Desa']) + pf(r['Des C']) * 2.5
-          + pf(r['Faltas Cometidas']) + pf(r['EPG'])
+        const tentativas = pf(r['Press. tent.']) + pf(r['T Desa']) + pf(r['Crt D']) * 2.5
+          + pf(r['Amr']) + pf(r['EPG'])
         return sDiv(tentativas, ctx.j90)
       },
       displayInTable: false,
@@ -832,23 +833,57 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf } = ctx
-        return pf(r['Des C']) + pf(r['Crt D'])
+        return pf(r['Press. conc.']) + pf(r['Des C']) + pf(r['Crt D']) * 2.5
       },
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
-      description: 'Saídas do gol com sucesso (desarmes concluídos + cruzamentos interceptados)',
+      description: 'Saídas com sucesso (pressões concluídas + desarmes concluídos + cruzamentos interceptados × 2,5)',
     },
     {
       key: 'saidas_sucesso_90',
       label: 'Saídas Sucesso/90',
       category: 'goalkeeping',
       formula: (r, ctx) => {
-        const { pf, sDiv } = ctx
-        return sDiv(pf(r['Des C']) + pf(r['Crt D']), ctx.j90)
+        const { pf } = ctx
+        const sucesso = pf(r['Press. conc.']) + pf(r['Des C']) + pf(r['Crt D']) * 2.5
+        return ctx.j90 === 0 ? 0 : sucesso / ctx.j90
       },
       displayInTable: false,
       lowerIsBetter: false,
+      format: 'number',
+      decimals: 3,
+    },
+    {
+      key: 'saidas_falhas',
+      label: 'Saídas do Gol Falhas',
+      category: 'goalkeeping',
+      formula: (r, ctx) => {
+        const { pf } = ctx
+        return (pf(r['Press. tent.']) - pf(r['Press. conc.']))
+          + (pf(r['T Desa']) - pf(r['Des C']))
+          + pf(r['Crt D']) * 2.5
+          + pf(r['Amr'])
+      },
+      displayInTable: false,
+      lowerIsBetter: true,
+      format: 'integer',
+      description: 'Saídas falhas: pressões e desarmes não concluídos + cruzamentos × 2,5 + cartões amarelos',
+    },
+    {
+      key: 'saidas_falhas_90',
+      label: 'Saídas do Gol Falhas/90',
+      category: 'goalkeeping',
+      formula: (r, ctx) => {
+        const { pf, sDiv } = ctx
+        const falhas = (pf(r['Press. tent.']) - pf(r['Press. conc.']))
+          + (pf(r['T Desa']) - pf(r['Des C']))
+          + pf(r['Crt D']) * 2.5
+          + pf(r['Amr'])
+        return sDiv(falhas, ctx.j90)
+      },
+      displayInTable: false,
+      lowerIsBetter: true,
       format: 'number',
       decimals: 2,
     },
@@ -858,9 +893,9 @@ export const goleirosConfig: PositionConfig = {
       category: 'goalkeeping',
       formula: (r, ctx) => {
         const { pf, pct } = ctx
-        const sucesso = pf(r['Des C']) + pf(r['Crt D'])
-        const tentativas = pf(r['Crt D']) + pf(r['T Desa']) + pf(r['Des C']) * 2.5
-          + pf(r['Faltas Cometidas']) + pf(r['EPG'])
+        const sucesso = pf(r['Press. conc.']) + pf(r['Des C']) + pf(r['Crt D']) * 2.5
+        const tentativas = pf(r['Press. tent.']) + pf(r['T Desa']) + pf(r['Crt D']) * 2.5
+          + pf(r['Amr']) + pf(r['EPG'])
         return pct(sucesso, tentativas)
       },
       displayInTable: false,
@@ -937,8 +972,8 @@ export const goleirosConfig: PositionConfig = {
       label: 'Posse Ganha Total',
       category: 'pressing',
       formula: (r, ctx) => {
-        const { pf, rnd } = ctx
-        return rnd(pf(r['Poss Con/90']) * ctx.j90, 0)
+        const { pf } = ctx
+        return pf(r['Poss Con/90']) * ctx.j90
       },
       displayInTable: false,
       lowerIsBetter: false,
@@ -1105,8 +1140,9 @@ export const goleirosConfig: PositionConfig = {
       formula: (r, ctx) => {
         const { pf } = ctx
         return pf(r['Ds']) + pf(r['Golos Sofridos']) + pf(r['Dft']) + pf(r['Dfa'])
-          + pf(r['Pen. Enfrentados']) + pf(r['Pas A']) + pf(r['T Desa'])
-          + pf(r['Press. tent.']) + pf(r['Faltas Cometidas']) + pf(r['EPG'])
+          + pf(r['Pen. Enfrentados']) + pf(r['Pas A']) + pf(r['Amr'])
+          + pf(r['Poss Perd/90']) * 1.33 + pf(r['Sem golos sofridos']) * 2
+          + pf(r['EPG']) * 2.5 + pf(r['T Desa']) + pf(r['Press. tent.'])
       },
       displayInTable: false,
       lowerIsBetter: false,
@@ -1120,7 +1156,7 @@ export const goleirosConfig: PositionConfig = {
       formula: (r, ctx) => {
         const { pf } = ctx
         return pf(r['Ds']) + pf(r['Dft']) + pf(r['Dfa']) + pf(r['Pen. Defendidos'])
-          + pf(r['Ps C']) + pf(r['Des C']) + pf(r['Crt D']) + pf(r['Press. conc.'])
+          + pf(r['Ps C']) + pf(r['Des C']) + pf(r['Press. conc.'])
       },
       displayInTable: false,
       lowerIsBetter: false,
@@ -1134,10 +1170,11 @@ export const goleirosConfig: PositionConfig = {
       formula: (r, ctx) => {
         const { pf, pct } = ctx
         const tentadas = pf(r['Ds']) + pf(r['Golos Sofridos']) + pf(r['Dft']) + pf(r['Dfa'])
-          + pf(r['Pen. Enfrentados']) + pf(r['Pas A']) + pf(r['T Desa'])
-          + pf(r['Press. tent.']) + pf(r['Faltas Cometidas']) + pf(r['EPG'])
+          + pf(r['Pen. Enfrentados']) + pf(r['Pas A']) + pf(r['Amr'])
+          + pf(r['Poss Perd/90']) * 1.33 + pf(r['Sem golos sofridos']) * 2
+          + pf(r['EPG']) * 2.5 + pf(r['T Desa']) + pf(r['Press. tent.'])
         const sucesso = pf(r['Ds']) + pf(r['Dft']) + pf(r['Dfa']) + pf(r['Pen. Defendidos'])
-          + pf(r['Ps C']) + pf(r['Des C']) + pf(r['Crt D']) + pf(r['Press. conc.'])
+          + pf(r['Ps C']) + pf(r['Des C']) + pf(r['Press. conc.'])
         return pct(sucesso, tentadas)
       },
       displayInTable: true,

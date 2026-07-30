@@ -1,5 +1,5 @@
 import type { PositionKey } from '@/types/position.ts'
-import type { RawPlayer } from '@/types/player.ts'
+import type { DerivedPlayer, RawPlayer } from '@/types/player.ts'
 
 export type MetricCategory =
   | 'general'
@@ -34,6 +34,7 @@ export interface MetricDefinition {
   format: 'number' | 'percentage' | 'integer'
   decimals?: number
   description?: string
+  collectionFormula?: (player: DerivedPlayer, players: DerivedPlayer[]) => number
 }
 
 export interface PositionConfig {
@@ -42,6 +43,7 @@ export interface PositionConfig {
   name: string
   rawColumns: string[]
   metrics: MetricDefinition[]
+  collectionMetrics?: MetricDefinition[]
   defaultTableColumns: string[]
   identityColumns: Record<string, string>
 }

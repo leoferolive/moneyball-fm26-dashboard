@@ -3,11 +3,21 @@ import { useAppStore } from '@/store/appStore.ts'
 
 interface ImportPanelProps {
   onImport: (rawText: string) => void
+  onClearData: () => void | Promise<void>
   loading: boolean
+  clearing: boolean
   error: string | null
+  playerCount: number
 }
 
-export function ImportPanel({ onImport, loading, error }: ImportPanelProps) {
+export function ImportPanel({
+  onImport,
+  onClearData,
+  loading,
+  clearing,
+  error,
+  playerCount,
+}: ImportPanelProps) {
   const [text, setText] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const importPanelOpen = useAppStore((s) => s.importPanelOpen)
@@ -37,9 +47,16 @@ export function ImportPanel({ onImport, loading, error }: ImportPanelProps) {
     if (text.trim()) onImport(text)
   }, [text, onImport])
 
+  const handleClearData = useCallback(() => {
+    const confirmed = window.confirm(
+      `Remover os ${playerCount} jogadores importados desta aba?`,
+    )
+    if (confirmed) void onClearData()
+  }, [onClearData, playerCount])
+
   if (!importPanelOpen) {
     return (
-      <div className="py-2">
+      <div className="py-2 flex items-center gap-4">
         <button
           onClick={() => setImportPanelOpen(true)}
           className="text-sm cursor-pointer"
@@ -47,6 +64,16 @@ export function ImportPanel({ onImport, loading, error }: ImportPanelProps) {
         >
           + Importar dados
         </button>
+        {playerCount > 0 && (
+          <button
+            onClick={handleClearData}
+            disabled={clearing}
+            className="text-sm cursor-pointer disabled:opacity-50"
+            style={{ color: 'var(--color-score-c)' }}
+          >
+            {clearing ? 'Limpando...' : `Limpar dados da aba (${playerCount})`}
+          </button>
+        )}
       </div>
     )
   }
@@ -96,7 +123,7 @@ export function ImportPanel({ onImport, loading, error }: ImportPanelProps) {
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={handleProcess}
           disabled={loading || !text.trim()}
@@ -117,7 +144,20 @@ export function ImportPanel({ onImport, loading, error }: ImportPanelProps) {
               color: 'var(--color-text-secondary)',
             }}
           >
-            Limpar
+            Limpar texto
+          </button>
+        )}
+        {playerCount > 0 && (
+          <button
+            onClick={handleClearData}
+            disabled={clearing || loading}
+            className="px-4 py-2 rounded text-sm cursor-pointer disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--color-bg-tertiary)',
+              color: 'var(--color-score-c)',
+            }}
+          >
+            {clearing ? 'Limpando...' : `Limpar dados da aba (${playerCount})`}
           </button>
         )}
       </div>
