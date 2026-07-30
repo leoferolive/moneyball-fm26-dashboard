@@ -1,0 +1,162 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable image tag to deploy, for example v1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate stable tag format
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid tag '$TAG'. Production accepts only vX.Y.Z tags."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure the tag exists
+        env:
+          TAG: ${{ inputs.tag }}
+        run: git rev-parse "${TAG}^{commit}" >/dev/null
+
+  deploy:
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Resolve deployment metadata
+        id: metadata
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${{ github.repository_owner }}/moneyball-fm26-dashboard:${TAG}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT || github.token }}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/moneyball-fm26-dashboard:latest
+            ${{ steps.metadata.outputs.image }}
+          labels: |
+            org.opencontainers.image.title=moneyball-fm26-dashboard
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.tag }}
+            org.opencontainers.image.revision=${{ steps.metadata.outputs.sha }}
+            org.opencontainers.image.created=${{ steps.metadata.outputs.build_time }}
+          cache-from: type=gha,scope=moneyball-prod
+          cache-to: type=gha,mode=max,scope=moneyball-prod
+
+      - name: Connect to the tailnet
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          args: --accept-routes --reset
+
+      - name: Configure kubectl
+        env:
+          KUBECONFIG_B64: ${{ secrets.KUBECONFIG }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBECONFIG_B64" | base64 --decode > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Apply Kubernetes manifests
+        env:
+          IMAGE: ${{ steps.metadata.outputs.image }}
+        run: |
+          set -euo pipefail
+          sed -i "s|ghcr.io/${{ github.repository_owner }}/moneyball-fm26-dashboard:bootstrap|${IMAGE}|" k8s/prod/deployment.yaml
+          kubectl apply -f k8s/prod/namespace.yaml
+          kubectl get secret ghcr-secret -n moneyball >/dev/null
+          kubectl apply -f k8s/prod/deployment.yaml
+          kubectl apply -f k8s/prod/service.yaml
+          kubectl apply -f k8s/prod/ingress.yaml
+
+      - name: Record deployed build
+        env:
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ steps.metadata.outputs.sha }}
+          BUILD_TIME: ${{ steps.metadata.outputs.build_time }}
+          IMAGE: ${{ steps.metadata.outputs.image }}
+        run: |
+          set -euo pipefail
+          kubectl set image deployment/moneyball "moneyball=${IMAGE}" -n moneyball
+          kubectl annotate deployment/moneyball \
+            "deploy.moneyball/tag=${TAG}" \
+            "deploy.moneyball/sha=${SHA}" \
+            "deploy.moneyball/build-time=${BUILD_TIME}" \
+            --overwrite -n moneyball
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/moneyball -n moneyball --timeout=300s
+
+      - name: Smoke test production
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --silent --show-error --max-time 10 https://moneyball.leoferolive.com.br/health > /dev/null; then
+              exit 0
+            fi
+            echo "Smoke test attempt ${attempt} failed."
+            sleep 5
+          done
+          echo "::error::Production health endpoint did not return 200."
+          exit 1
+
+      - name: Deployment summary
+        if: always()
+        env:
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ steps.metadata.outputs.sha }}
+          IMAGE: ${{ steps.metadata.outputs.image }}
+        run: |
+          {
+            echo "## Production deployment"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Tag | \`${TAG}\` |"
+            echo "| SHA | \`${SHA}\` |"
+            echo "| Image | \`${IMAGE}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,9 @@
+.git
+.github
+**/node_modules
+**/dist
+*.csv
+*.xlsm
+docs
+README.md
+CLAUDE.md
