@@ -33,7 +33,7 @@ export function WeightSlider({ metricKey, label, weight, onChange, onRemove }: W
         max={100}
         value={weight}
         onChange={(e) => onChange(metricKey, Number(e.target.value))}
-        className="w-24 shrink-0 accent-blue-500"
+        className="w-24 shrink-0"
       />
       <span
         className="text-xs font-mono w-8 text-right shrink-0"

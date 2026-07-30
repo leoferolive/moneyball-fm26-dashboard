@@ -17,7 +17,7 @@ interface ComparisonRadarProps {
   stats: Record<string, ColumnStats>
 }
 
-const PLAYER_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+const PLAYER_COLORS = ['#1a9a5a', '#2970c4', '#c89b15', '#b83226']
 
 function normalize(value: number, stat: ColumnStats): number {
   if (stat.max === stat.min) return 50

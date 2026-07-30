@@ -1,50 +1,98 @@
 @import "tailwindcss";
 
 :root {
-  /* Sports analytics pro palette */
-  --color-bg-primary: #0f1117;
-  --color-bg-secondary: #161922;
-  --color-bg-tertiary: #1c2030;
-  --color-bg-hover: #242838;
-  --color-border: #2a2e3e;
-  --color-border-light: #353a4d;
+  /* ── Scout Command Center ─────────────────────────────
+     Color primitives named for the football world.
+     Someone reading only these tokens should know
+     this is about football analytics.
+  ──────────────────────────────────────────────────── */
 
-  --color-text-primary: #e8eaed;
-  --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
+  /* Turf — deep navy surfaces, the command center walls */
+  --turf-deep:      #070a16;
+  --turf:           #0b0f1b;
+  --turf-raised:    #101526;
+  --turf-elevated:  #161c2f;
+  --turf-hover:     #1d2438;
 
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
+  /* Chalk — text hierarchy, like field markings */
+  --chalk:          #dce0e8;
+  --chalk-faded:    #7f8a9c;
+  --chalk-ghost:    #4d586c;
 
-  --color-score-s: #10b981;
-  --color-score-a: #3b82f6;
-  --color-score-b: #f59e0b;
-  --color-score-c: #ef4444;
+  /* Slate — borders, barely-there structure */
+  --slate:          rgba(140, 160, 200, 0.10);
+  --slate-light:    rgba(140, 160, 200, 0.05);
+  --slate-strong:   rgba(140, 160, 200, 0.16);
 
-  --color-heat-good: rgba(16, 185, 129, 0.15);
-  --color-heat-bad: rgba(239, 68, 68, 0.12);
+  /* Pitch — accent green, the field itself */
+  --pitch:          #1a9a5a;
+  --pitch-hover:    #16874f;
+  --pitch-glow:     rgba(26, 154, 90, 0.12);
+
+  /* Scoreboard — amber highlights, LED warmth */
+  --scoreboard:     #c89b15;
+  --scoreboard-glow: rgba(200, 155, 21, 0.12);
+
+  /* Whistle — red card, danger, removal */
+  --whistle:        #b83226;
+  --whistle-glow:   rgba(184, 50, 38, 0.09);
+
+  /* Sky — secondary blue, open field */
+  --sky:            #2970c4;
+
+  /* ── Functional Aliases ────────────────────────────── */
+  --color-bg-primary:   var(--turf);
+  --color-bg-secondary: var(--turf-raised);
+  --color-bg-tertiary:  var(--turf-elevated);
+  --color-bg-hover:     var(--turf-hover);
+  --color-border:       var(--slate);
+  --color-border-light: var(--slate-light);
+
+  --color-text-primary:   var(--chalk);
+  --color-text-secondary: var(--chalk-faded);
+  --color-text-muted:     var(--chalk-ghost);
+
+  --color-accent:       var(--pitch);
+  --color-accent-hover: var(--pitch-hover);
+
+  --color-score-s: var(--pitch);
+  --color-score-a: var(--sky);
+  --color-score-b: var(--scoreboard);
+  --color-score-c: var(--whistle);
+
+  --color-heat-good: var(--pitch-glow);
+  --color-heat-bad:  var(--whistle-glow);
 
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 [data-theme="light"] {
-  --color-bg-primary: #f8f9fb;
-  --color-bg-secondary: #ffffff;
-  --color-bg-tertiary: #f1f3f5;
-  --color-bg-hover: #e9ecef;
-  --color-border: #dee2e6;
-  --color-border-light: #e9ecef;
+  --turf-deep:      #eef1f5;
+  --turf:           #f4f6f9;
+  --turf-raised:    #ffffff;
+  --turf-elevated:  #e8ecf1;
+  --turf-hover:     #dfe3ea;
 
-  --color-text-primary: #1a1e2e;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #9ca3af;
+  --chalk:          #0f1420;
+  --chalk-faded:    #455068;
+  --chalk-ghost:    #8892a5;
 
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
+  --slate:          rgba(15, 25, 50, 0.09);
+  --slate-light:    rgba(15, 25, 50, 0.04);
+  --slate-strong:   rgba(15, 25, 50, 0.14);
 
-  --color-heat-good: rgba(16, 185, 129, 0.12);
-  --color-heat-bad: rgba(239, 68, 68, 0.08);
+  --pitch:          #158548;
+  --pitch-hover:    #11703c;
+  --pitch-glow:     rgba(21, 133, 72, 0.09);
+
+  --scoreboard:     #a07a0a;
+  --scoreboard-glow: rgba(160, 122, 10, 0.09);
+
+  --whistle:        #a52d22;
+  --whistle-glow:   rgba(165, 45, 34, 0.06);
+
+  --sky:            #1e5fa8;
 }
 
 @font-face {
@@ -62,25 +110,42 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  color: var(--chalk);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Range input accent */
+input[type="range"] {
+  accent-color: var(--pitch);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--pitch);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(26, 154, 90, 0.30);
+  color: var(--chalk);
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: var(--turf-deep);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-light);
-  border-radius: 4px;
+  background: var(--slate-strong);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: var(--chalk-ghost);
 }
