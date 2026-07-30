@@ -25,6 +25,12 @@
 6. **[2026-07-30] Macros VBA também fazem parte da regra de negócio**
    Do instead: Extrair `vbaProject.bin` e mapear os botões/desenhos do `.xlsm`; neste workbook, normalizar as colunas decimais antes das fórmulas e expor a limpeza real da aba Time.
 
+7. **[2026-07-30] App web vive em `moneyball-fm26-v3/`**
+   Do instead: Executar os scripts npm nesse subdiretório; para Docker e Kubernetes, usar a raiz do repositório como contexto e os manifests em `k8s/prod`.
+
+8. **[2026-07-30] ESLint 10 exige Node 20.19+, 22.13+ ou 24+**
+   Do instead: Manter CI e Docker em uma imagem Node 22 atual; não fixar uma versão 22 anterior à 22.13.
+
 ## Domain Behavior Guardrails
 1. **[2026-03-24] Nomes de colunas FM26 são case-sensitive e exatos**
    Do instead: rawColumns nos configs devem corresponder exatamente aos headers exportados pelo FM26. Qualquer mudança quebra parsing para todos os usuários.
