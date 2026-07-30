@@ -7,7 +7,7 @@
 /** Parse a value to float, handling PT-BR and EN number formats + FM26 units */
 export function pf(v: string | number | undefined | null): number {
   if (v === undefined || v === null || v === '') return 0
-  if (typeof v === 'number') return isNaN(v) ? 0 : v
+  if (typeof v === 'number') return Number.isNaN(v) ? 0 : v
 
   let s = String(v).trim()
 
@@ -19,7 +19,7 @@ export function pf(v: string | number | undefined | null): number {
     .replace(/\s*p\/m.*$/g, '')
     .replace(/\s*M\s*€.*$/i, '')
     .replace(/\s*m\s*€.*$/g, '')
-    .replace(/[^\d.,\-]/g, '')
+    .replace(/[^\d.,-]/g, '')
 
   s = s.trim()
   if (!s || s === '-') return 0
@@ -33,8 +33,11 @@ export function pf(v: string | number | undefined | null): number {
     // Comma is last → PT-BR decimal: "1.234,56" or "6,4"
     s = s.replace(/\./g, '').replace(',', '.')
   } else if (lastDot > lastComma) {
-    // Dot is last → EN decimal: "1,234.56" or "6.4"
-    s = s.replace(/,/g, '')
+    const ptBrThousandsOnly = lastComma < 0 && /^-?\d{1,3}(?:\.\d{3})+$/.test(s)
+    // A single dot followed by groups of three digits is the common
+    // FM26/PT-BR thousands representation (e.g. "2.035" minutes).
+    // Other dot-only values remain EN decimals (e.g. "5.03" xG).
+    s = ptBrThousandsOnly ? s.replace(/\./g, '') : s.replace(/,/g, '')
   } else if (lastComma >= 0 && lastDot < 0) {
     // Only comma → treat as decimal: "6,4"
     s = s.replace(',', '.')
@@ -42,7 +45,7 @@ export function pf(v: string | number | undefined | null): number {
   // Only dot or no separator → already fine
 
   const n = parseFloat(s)
-  return isNaN(n) ? 0 : n
+  return Number.isNaN(n) ? 0 : n
 }
 
 /** Round to d decimal places (default 2) */
@@ -51,12 +54,12 @@ export function rnd(v: number, d = 2): number {
   return Math.round(v * factor) / factor
 }
 
-/** Safe division — returns 0 if divisor is 0 */
+/** Safe division — returns 0 if divisor is 0 and follows the site's 2-decimal convention. */
 export function sDiv(a: number, b: number): number {
   return b === 0 ? 0 : rnd(a / b)
 }
 
-/** Percentage — returns 0 if divisor is 0 */
+/** Percentage — returns 0 if divisor is 0 and follows the site's 2-decimal convention. */
 export function pct(a: number, b: number): number {
   return b === 0 ? 0 : rnd((a / b) * 100)
 }

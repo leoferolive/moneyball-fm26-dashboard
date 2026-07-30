@@ -1,4 +1,42 @@
-import type { PositionConfig } from './types.ts'
+import type { MetricDefinition, PositionConfig } from './types.ts'
+
+type MetricOptions = Partial<
+  Pick<MetricDefinition, 'decimals' | 'displayInTable' | 'lowerIsBetter'>
+>
+
+const metric = (
+  key: string,
+  label: string,
+  category: MetricDefinition['category'],
+  format: MetricDefinition['format'],
+  formula: MetricDefinition['formula'],
+  options: MetricOptions = {},
+): MetricDefinition => ({
+  key,
+  label,
+  category,
+  format,
+  formula,
+  displayInTable: false,
+  lowerIsBetter: false,
+  ...options,
+})
+
+const appearances = (value: string | undefined): [number, number] => {
+  const match = String(value ?? '').match(/^\s*(\d+)(?:\s*\((\d+)\))?/)
+  return [Number(match?.[1] ?? 0), Number(match?.[2] ?? 0)]
+}
+
+const minutesFallback = (minutes: number, divisor: number, fallback: number): number => (
+  divisor === 0 ? fallback : Math.round((minutes / divisor) * 100) / 100
+)
+
+const rating = (
+  value: string | undefined,
+  parse: (raw: string | undefined) => number,
+): number => (
+  /\d/.test(String(value ?? '')) ? parse(value) : 5
+)
 
 export const overallConfig: PositionConfig = {
   key: 'overall',
@@ -18,8 +56,12 @@ export const overallConfig: PositionConfig = {
     'Pens', 'Pens M', 'Distância', 'Classificação',
   ],
   identityColumns: {
-    Jogador: 'Jogador', Nação: 'Nação', Clube: 'Clube', Idade: 'Idade',
-    Salário: 'Salário', Valor: 'Valor Estimado',
+    Jogador: 'Jogador',
+    Nação: 'Nação',
+    Clube: 'Clube',
+    Idade: 'Idade',
+    Salário: 'Salário',
+    Valor: 'Valor Estimado',
   },
   defaultTableColumns: [
     'jogosCompletos', 'gols90', 'ast90', 'npxG90', 'xA90',
@@ -27,245 +69,597 @@ export const overallConfig: PositionConfig = {
     'pressaoG90', 'dist90', 'notaMedia',
   ],
   metrics: [
-    // ── GENERAL ──
-    { key: 'jogosCompletos', label: 'Jogos Completos', category: 'general', format: 'number', decimals: 1, displayInTable: true, lowerIsBetter: false,
-      formula: (_r, ctx) => ctx.j90 },
-    { key: 'jogosTotais', label: 'Jogos Totais', category: 'general', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Presenças']) },
-    { key: 'minPartida', label: 'Min/Partida', category: 'general', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Minutos']), ctx.pf(r['Presenças'])) },
-    { key: 'jogosComoTitular', label: 'Jogos como Titular', category: 'general', format: 'number', decimals: 1, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => {
-        const minPart = ctx.sDiv(ctx.pf(r['Minutos']), ctx.pf(r['Presenças']))
-        return minPart >= 60 ? ctx.pf(r['Presenças']) : ctx.pf(r['Presenças']) * ctx.sDiv(minPart, 90)
-      } },
-    { key: 'hdj', label: 'Man of the Match', category: 'general', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['HdJ']) },
-    { key: 'minHdj', label: 'Min/HdJ', category: 'general', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Minutos']), ctx.pf(r['HdJ'])) },
-    { key: 'pctHdj', label: '% HdJ', category: 'general', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['HdJ']), ctx.j90) },
+    // H:EC — todas as colunas calculadas da aba, na mesma ordem.
+    metric('jogosCompletos', 'Jogos completos', 'general', 'number',
+      (_r, ctx) => ctx.j90, { decimals: 1, displayInTable: true }),
+    metric('jogosTotais', 'Jogos Totais', 'general', 'integer',
+      (r) => {
+        const [starts, substitute] = appearances(r['Presenças'])
+        return starts + substitute
+      }),
+    metric('minPartida', 'Minutos por partida', 'general', 'number',
+      (r, ctx) => {
+        const [starts, substitute] = appearances(r['Presenças'])
+        return ctx.sDiv(ctx.pf(r['Minutos']), starts + substitute)
+      }, { decimals: 2 }),
+    metric('jogosComoTitular', 'Jogos como Titular', 'general', 'percentage',
+      (r, ctx) => {
+        const [starts, substitute] = appearances(r['Presenças'])
+        const total = starts + substitute
+        return total === 0 ? 0 : ctx.rnd((starts / total) * 100, 0)
+      }, { decimals: 0 }),
+    metric('hdj', 'Man of the match', 'general', 'integer',
+      (r, ctx) => ctx.pf(r['HdJ'])),
+    metric('minHdj', 'Minutos pra ser o homem do jogo', 'general', 'number',
+      (r, ctx) => minutesFallback(ctx.pf(r['Minutos']), ctx.pf(r['HdJ']), 5400),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('pctHdj', '% de vezes que foi eleito o Homem do Jogo', 'general', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['HdJ']), ctx.j90), { decimals: 2 }),
 
-    // ── ATTACKING ──
-    { key: 'gols', label: 'Gols', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Golos']) },
-    { key: 'assist', label: 'Assistências', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Assist.']) },
-    { key: 'golsAst', label: 'Gols + Ast', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Golos']) + ctx.pf(r['Assist.']) },
-    { key: 'gols90', label: 'Gols/90', category: 'attacking', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Golos']), ctx.j90) },
-    { key: 'ast90', label: 'Ast/90', category: 'attacking', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Assist.']), ctx.j90) },
-    { key: 'golsAst90', label: 'G+A/90', category: 'attacking', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Golos']) + ctx.pf(r['Assist.']), ctx.j90) },
+    metric('gols', 'Gols', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Golos'])),
+    metric('assist', 'Assistências', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Assist.'])),
+    metric('golsAst', 'Gols + Assist', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Golos']) + ctx.pf(r['Assist.'])),
+    metric('gols90', 'Gols/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Golos']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('ast90', 'Assistência /90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Assist.']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('golsAst90', 'Gols + A/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Golos']) + ctx.pf(r['Assist.']), ctx.j90),
+      { decimals: 2 }),
 
-    // ── xG / xA ──
-    { key: 'xG', label: 'xG', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['xG']) },
-    { key: 'npxG', label: 'npxG', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79 },
-    { key: 'npxG90', label: 'npxG/90', category: 'shooting', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79, ctx.j90) },
-    { key: 'xA', label: 'xA', category: 'creation', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['xA']) },
-    { key: 'xA90', label: 'xA/90', category: 'creation', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['xA']), ctx.j90) },
-    { key: 'xGxA', label: 'xG + xA', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['xG']) + ctx.pf(r['xA']) },
-    { key: 'xGxA90', label: '(xG+xA)/90', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['xG']) + ctx.pf(r['xA']), ctx.j90) },
+    metric('xG', 'xG', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['xG']), { decimals: 2 }),
+    metric('npxG', 'xG sem pênalti', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79, { decimals: 2 }),
+    metric('npxG90', 'non Pen xG/90', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79, ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('xA', 'Assistências Esperadas xA', 'creation', 'number',
+      (r, ctx) => ctx.pf(r['xA']), { decimals: 2 }),
+    metric('xA90', 'xA /90', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['xA']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('xGxA', 'xG + xA', 'shooting', 'number',
+      (r, ctx) => (
+        ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79 + ctx.pf(r['xA'])
+      ), { decimals: 2 }),
+    metric('xGxA90', 'xG + xA /90', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79 + ctx.pf(r['xA']),
+        ctx.j90,
+      ), { decimals: 2 }),
 
-    // ── SHOOTING ──
-    { key: 'finalizacoes', label: 'Finalizações', category: 'shooting', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Remates']) },
-    { key: 'fin90', label: 'Fin/90', category: 'shooting', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']), ctx.j90) },
-    { key: 'finNoGol', label: 'Fin No Gol', category: 'shooting', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Rem %']) },
-    { key: 'finNoGol90', label: 'Fin No Gol/90', category: 'shooting', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Rem %']), ctx.j90) },
-    { key: 'pctFinNoGol', label: '% Fin No Gol', category: 'shooting', format: 'percentage', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Rem %']), ctx.pf(r['Remates'])) },
-    { key: 'conversaoGols', label: '% Conversão Gols', category: 'shooting', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Golos']), ctx.pf(r['Remates'])) },
-    { key: 'golsNaoEsperados', label: 'Gols Não Esperados', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Golos']) - ctx.pf(r['xG']) },
-    { key: 'golsNaoEspSemPen', label: 'Gols NE Sem Pên', category: 'shooting', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => (ctx.pf(r['Golos']) - ctx.pf(r['Pens M'])) - (ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79) },
+    metric('finalizacoes', 'Finalizações (Total)', 'shooting', 'integer',
+      (r, ctx) => ctx.pf(r['Remates'])),
+    metric('fin90', 'Finalizações /90', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']), ctx.j90), { decimals: 2 }),
+    metric('finNoGol', 'Finalizações no gol', 'shooting', 'integer',
+      (r, ctx) => ctx.pf(r['Rem %'])),
+    metric('finNoGol90', 'Finalizações no gol /90', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Rem %']), ctx.j90), { decimals: 2 }),
+    metric('pctFinNoGol', '% Finalizações em direção ao gol', 'shooting', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Rem %']), ctx.pf(r['Remates'])),
+      { decimals: 2, displayInTable: true }),
+    metric('finPorGol', 'Finalizações pra marcar um gol', 'shooting', 'number',
+      (r, ctx) => minutesFallback(
+        ctx.pf(r['Remates']) - ctx.pf(r['Pens']),
+        ctx.pf(r['Golos']) - ctx.pf(r['Pens M']),
+        50,
+      ), { decimals: 2, lowerIsBetter: true }),
+    metric('finNoGolPorGol', 'Finalizações no gol pra marcar um gol', 'shooting', 'number',
+      (r, ctx) => minutesFallback(
+        ctx.pf(r['Rem %']) - ctx.pf(r['Pens']),
+        ctx.pf(r['Golos']) - ctx.pf(r['Pens M']),
+        50,
+      ), { decimals: 2, lowerIsBetter: true }),
+    metric('conversaoGols', '% Finalizações que converteram em gol', 'shooting', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Golos']) - ctx.pf(r['Pens M']),
+        ctx.pf(r['Remates']) - ctx.pf(r['Pens']),
+      ), { decimals: 2 }),
+    metric('minPorFinalizacao', 'Minutos pra tentar uma finalização', 'shooting', 'number',
+      (r, ctx) => minutesFallback(ctx.pf(r['Minutos']), ctx.pf(r['Remates']), 700),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('minPorFinNoGol', 'Minutos pra acertar um remate no gol', 'shooting', 'number',
+      (r, ctx) => minutesFallback(ctx.pf(r['Minutos']), ctx.pf(r['Rem %']), 700),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('minPorGol', 'Minutos pra MARCAR um gol', 'shooting', 'number',
+      (r, ctx) => {
+        const minutes = ctx.pf(r['Minutos'])
+        return minutesFallback(minutes, ctx.pf(r['Golos']), minutes)
+      }, { decimals: 2, lowerIsBetter: true }),
+    metric('minPorParticipacaoGol', 'Minutos pra PARTICIPAR de um gol', 'attacking', 'number',
+      (r, ctx) => {
+        const minutes = ctx.pf(r['Minutos'])
+        return minutesFallback(
+          minutes,
+          ctx.pf(r['Golos']) + ctx.pf(r['Assist.']),
+          minutes,
+        )
+      }, { decimals: 2, lowerIsBetter: true }),
+    metric('golsNaoEsperados', 'Gols não esperados', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['Golos']) - ctx.pf(r['xG']), { decimals: 2 }),
+    metric('golsNaoEspSemPen', 'Gols não esperados SEM PÊNALTI', 'shooting', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Golos']) - ctx.pf(r['Pens M'])
+        - (ctx.pf(r['xG']) - ctx.pf(r['Pens']) * 0.79)
+      ), { decimals: 2 }),
 
-    // ── CROSSING ──
-    { key: 'cruzT', label: 'Cruzamentos Tentados', category: 'creation', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Cr T']) },
-    { key: 'cruzC', label: 'Cruzamentos Certos', category: 'creation', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Cr C']) },
-    { key: 'pctCruz', label: '% Cruzamentos', category: 'creation', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Cr C']), ctx.pf(r['Cr T'])) },
+    metric('foraJogo', 'Fora de jogo', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Fj']), { lowerIsBetter: true }),
+    metric('foraJogo90', 'Fora de jogo/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Fj']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
 
-    // ── CREATION ──
-    { key: 'passD', label: 'Passes Decisivos', category: 'creation', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Passes Ch']) },
-    { key: 'passD90', label: 'Pass D/90', category: 'creation', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Passes Ch']), ctx.j90) },
-    { key: 'xAResult', label: 'xA Resultado', category: 'creation', format: 'number', decimals: 2, displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['xA']), ctx.pf(r['Passes Ch'])) },
-    { key: 'chancesDespEquipe', label: 'Chances Desp. Equipe', category: 'creation', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['OCG']) },
+    metric('cabsDisp', 'Cabeceios Disputados', 'aerial', 'integer',
+      (r, ctx) => ctx.pf(r['Cab A'])),
+    metric('cabsG', 'Cabeceios Ganhos', 'aerial', 'integer',
+      (r, ctx) => ctx.pf(r['Cabs'])),
+    metric('cabsPerd', 'Cabeceios Perdidos', 'aerial', 'integer',
+      (r, ctx) => ctx.pf(r['Cab A']) - ctx.pf(r['Cabs']), { lowerIsBetter: true }),
+    metric('cabsG90', 'Cabeceios Ganhos/90', 'aerial', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Cabs']), ctx.j90), { decimals: 2 }),
+    metric('pctCabs', '% Cabs', 'aerial', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Cabs']), ctx.pf(r['Cab A'])),
+      { decimals: 2, displayInTable: true }),
 
-    // ── SET PIECES ──
-    { key: 'tentsBP', label: 'Tentativas Bola Parada', category: 'setpiece', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['CT-JA']) - ctx.pf(r['Cr T']) },
-    { key: 'chancesBP', label: 'Chances Bola Parada', category: 'setpiece', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['CC-JA']) - ctx.pf(r['Cr C']) },
-    { key: 'pctBP', label: '% Bola Parada', category: 'setpiece', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['CC-JA']) - ctx.pf(r['Cr C']), ctx.pf(r['CT-JA']) - ctx.pf(r['Cr T'])) },
+    metric('desT', 'Desarmes Tentados', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas'])),
+    metric('desG', 'Desarmes Ganhos', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Des C'])),
+    metric('driblesS', 'Dribles Sofridos', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['T Desa']) - ctx.pf(r['Des C']),
+      { lowerIsBetter: true }),
+    metric('desG90', 'Des Ganhos/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Des C']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('driblesS90', 'Dribles Sofridos/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['T Desa']) - ctx.pf(r['Des C']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('pctDes', '%Des Ganhos', 'defending', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Des C']),
+        ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']),
+      ), { decimals: 2 }),
 
-    // ── AERIAL ──
-    { key: 'cabsDisp', label: 'Cabs Disputados', category: 'aerial', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Cabs']) },
-    { key: 'cabsDisp90', label: 'Cabs Disp/90', category: 'aerial', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cabs']), ctx.j90) },
-    { key: 'cabsG', label: 'Cabs Ganhos', category: 'aerial', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Cab A']) },
-    { key: 'cabsG90', label: 'Cabs G/90', category: 'aerial', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cab A']), ctx.j90) },
-    { key: 'pctCabs', label: '% Cabs Ganhos', category: 'aerial', format: 'percentage', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Cab A']), ctx.pf(r['Cabs'])) },
+    metric('faltasComet', 'Faltas cometidas', 'discipline', 'integer',
+      (r, ctx) => ctx.pf(r['Faltas Cometidas']), { lowerIsBetter: true }),
+    metric('faltas90', 'Faltas/90', 'discipline', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Faltas Cometidas']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('amarelos', 'Cartões Amarelos', 'discipline', 'integer',
+      (r, ctx) => ctx.pf(r['Amr']), { lowerIsBetter: true }),
+    metric('amarelos90', 'Cartão Amarelo/90', 'discipline', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Amr']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('vermelhos', 'Cartão Vermelho', 'discipline', 'integer',
+      (r, ctx) => ctx.pf(r['Cartões vermelhos']), { lowerIsBetter: true }),
+    metric('vermelhos90', 'Cartão Vermelho/90', 'discipline', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Cartões vermelhos']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('totalCartoes', 'Cartões Recebidos no Total', 'discipline', 'integer',
+      (r, ctx) => ctx.pf(r['Amr']) + ctx.pf(r['Cartões vermelhos']),
+      { lowerIsBetter: true }),
+    metric('cartoesPorFalta', '% Cartões por falta cometida', 'discipline', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Amr']) + ctx.pf(r['Cartões vermelhos']),
+        ctx.pf(r['Faltas Cometidas']),
+      ), { decimals: 2, lowerIsBetter: true }),
 
-    // ── DEFENDING: TACKLES ──
-    { key: 'desT', label: 'Desarmes Tentados', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']) },
-    { key: 'desT90', label: 'Des T/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']), ctx.j90) },
-    { key: 'desG', label: 'Desarmes Ganhos', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Des C']) },
-    { key: 'desG90', label: 'Des G/90', category: 'defending', format: 'number', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Des C']), ctx.j90) },
-    { key: 'pctDes', label: '% Des Ganhos', category: 'defending', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Des C']), ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas'])) },
-    { key: 'driblesS', label: 'Dribles Sofridos', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['T Desa']) - ctx.pf(r['Des C']) },
-    { key: 'driblesS90', label: 'Dribles Sof/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['T Desa']) - ctx.pf(r['Des C']), ctx.j90) },
-    { key: 'interceptacoes', label: 'Interceptações', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Crt']) },
-    { key: 'int90', label: 'Int/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Crt']), ctx.j90) },
-    { key: 'bloqueios', label: 'Bloqueios', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Blq']) },
-    { key: 'bloq90', label: 'Bloq/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Blq']), ctx.j90) },
-    { key: 'remsBloq', label: 'Remates Bloqueados', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Rems Bloq']) },
-    { key: 'remsBloq90', label: 'Rems Bloq/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Rems Bloq']), ctx.j90) },
-    { key: 'alivios', label: 'Alívios', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Alívios']) },
-    { key: 'alivios90', label: 'Alívios/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Alívios']), ctx.j90) },
-    { key: 'crtD', label: 'Cortes Decisivos', category: 'defending', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Crt D']) },
-    { key: 'crtD90', label: 'Crt D/90', category: 'defending', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Crt D']), ctx.j90) },
+    metric('saldoPosse', 'Proporção de posse Ganha - Perdida', 'pressing', 'number',
+      (r, ctx) => ctx.pf(r['Poss Con/90']) - ctx.pf(r['Poss Perd/90']),
+      { decimals: 2 }),
+    metric('pressaoT', 'Movimentos de pressão Tentados', 'pressing', 'integer',
+      (r, ctx) => ctx.pf(r['Press. tent.'])),
+    metric('pressaoG', 'Movimentos de pressão Concretizados', 'pressing', 'integer',
+      (r, ctx) => ctx.pf(r['Press. conc.'])),
+    metric('pctPressao', '% Pressão pra roubar a bola com sucesso', 'pressing', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Press. conc.']), ctx.pf(r['Press. tent.'])),
+      { decimals: 2 }),
 
-    // ── PRESSING ──
-    { key: 'pressaoT', label: 'Pressão Tentada', category: 'pressing', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Press. tent.']) },
-    { key: 'pressaoT90', label: 'Pressão T/90', category: 'pressing', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Press. tent.']), ctx.j90) },
-    { key: 'pressaoG', label: 'Pressão Ganha', category: 'pressing', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Press. conc.']) },
-    { key: 'pressaoG90', label: 'Pressão G/90', category: 'pressing', format: 'number', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Press. conc.']), ctx.j90) },
-    { key: 'pctPressao', label: '% Pressão', category: 'pressing', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Press. conc.']), ctx.pf(r['Press. tent.'])) },
-    { key: 'possGanha90', label: 'Posse Ganha/90', category: 'pressing', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Poss Con/90']) },
-    { key: 'possPerd90', label: 'Posse Perdida/90', category: 'pressing', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Poss Perd/90']) },
+    metric('lancesDisputados', 'Lances disputados', 'defending', 'integer',
+      (r, ctx) => (
+        ctx.pf(r['Cab A']) + ctx.pf(r['T Desa']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Press. tent.'])
+      )),
+    metric('lancesDisputados90', 'Lances disputados/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cab A']) + ctx.pf(r['T Desa']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Press. tent.']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('lancesGanhos', 'Lances ganhos', 'defending', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Press. conc.'])
+      )),
+    metric('lancesGanhos90', 'Lances ganhos/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Press. conc.']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('pctLancesGanhos', '% Lances disputados e ganhos de forma limpa', 'defending', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Press. conc.']),
+        ctx.pf(r['Cab A']) + ctx.pf(r['T Desa']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Press. tent.']),
+      ), { decimals: 2 }),
 
-    // ── PASSING ──
-    { key: 'passesT', label: 'Passes Tentados', category: 'passing', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Pas A']) },
-    { key: 'passesT90', label: 'Passes T/90', category: 'passing', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Pas A']), ctx.j90) },
-    { key: 'passesC', label: 'Passes Certos', category: 'passing', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Ps C']) },
-    { key: 'passesC90', label: 'Passes C/90', category: 'passing', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Ps C']), ctx.j90) },
-    { key: 'pctPassesCertos', label: '% Passes Certos', category: 'passing', format: 'percentage', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Ps C']), ctx.pf(r['Pas A'])) },
-    { key: 'passesErr', label: 'Passes Errados', category: 'passing', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Pas A']) - ctx.pf(r['Ps C']) },
-    { key: 'passesErr90', label: 'Passes Err/90', category: 'passing', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Pas A']) - ctx.pf(r['Ps C']), ctx.j90) },
-    { key: 'passesProgr', label: 'Passes Progressão', category: 'passing', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['PeP']) },
-    { key: 'passesProgr90', label: 'Pass Prog/90', category: 'passing', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['PeP']), ctx.j90) },
+    metric('bolasInt', 'Bolas Interceptadas', 'defending', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Crt D']) + ctx.pf(r['Alívios'])
+      )),
+    metric('bolasInt90', 'Bolas Int / 90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Crt D']) + ctx.pf(r['Alívios']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('bolasRoubadas', 'Bolas roubadas', 'defending', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Press. conc.']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D']) * 1.5
+      )),
+    metric('bolasRoubadas90', 'Bolas roubadas / 90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Press. conc.']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D']) * 1.5,
+        ctx.j90,
+      ), { decimals: 2 }),
 
-    // ── DRIBBLING ──
-    { key: 'fintas', label: 'Fintas', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Fnt']) },
-    { key: 'fintas90', label: 'Fintas/90', category: 'attacking', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Fnt']), ctx.j90) },
+    metric('tentsBP', 'Tentativas de  Criar  uma chance em Bola Parada', 'setpiece', 'integer',
+      (r, ctx) => ctx.pf(r['Cr T']) - ctx.pf(r['CT-JA'])),
+    metric('tentsBP90', 'Tentativas/90', 'setpiece', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Cr T']) - ctx.pf(r['CT-JA']), ctx.j90),
+      { decimals: 2 }),
+    metric('chancesBP', 'Chances Criadas em Bola Parada', 'setpiece', 'integer',
+      (r, ctx) => ctx.pf(r['Cr C']) - ctx.pf(r['CC-JA'])),
+    metric('chancesBP90', 'Chances C /90', 'setpiece', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Cr C']) - ctx.pf(r['CC-JA']), ctx.j90),
+      { decimals: 2 }),
+    metric('pctBP', '% Aproveitamento das Tentativas de Criar chance em  BP', 'setpiece', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Cr C']) - ctx.pf(r['CC-JA']),
+        ctx.pf(r['Cr T']) - ctx.pf(r['CT-JA']),
+      ), { decimals: 2 }),
 
-    // ── DISCIPLINE ──
-    { key: 'amarelos', label: 'Amarelos', category: 'discipline', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Amr']) },
-    { key: 'vermelhos', label: 'Vermelhos', category: 'discipline', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Cartões vermelhos']) },
-    { key: 'totalCartoes', label: 'Total Cartões', category: 'discipline', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Amr']) + ctx.pf(r['Cartões vermelhos']) },
-    { key: 'faltasComet', label: 'Faltas Cometidas', category: 'discipline', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Faltas Cometidas']) },
-    { key: 'faltas90', label: 'Faltas/90', category: 'discipline', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Faltas Cometidas']), ctx.j90) },
-    { key: 'errosGol', label: 'Erros → Gol', category: 'discipline', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['EPG']) },
-    { key: 'erros90', label: 'Erros/90', category: 'discipline', format: 'number', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['EPG']), ctx.j90) },
+    metric('pensBatidos', 'Pênaltis batidos', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Pens'])),
+    metric('pensMarcados', 'Pênaltis marcados', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Pens M'])),
+    metric('pensPerdidos', 'Pênaltis perdidos', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Pens']) - ctx.pf(r['Pens M']),
+      { lowerIsBetter: true }),
+    metric('pctPen', '% Conversão de pênalti', 'attacking', 'percentage',
+      (r, ctx) => (
+        ctx.pf(r['Pens']) === 0
+          ? 0.00000001
+          : ctx.pct(ctx.pf(r['Pens M']), ctx.pf(r['Pens']))
+      ), { decimals: 8 }),
 
-    // ── PHYSICAL ──
-    { key: 'distancia', label: 'Distância', category: 'physical', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Distância']) },
-    { key: 'dist90', label: 'Dist/90', category: 'physical', format: 'number', displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Distância']), ctx.j90) },
-    { key: 'sprints90', label: 'Sprints/90', category: 'physical', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Sprints/90']) },
+    metric('lancesOfT', 'Lances ofensivos Tentados', 'attacking', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cr T']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+      )),
+    metric('lancesOf90', 'Lances ofensivos tentados/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cr T']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90,
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('lancesOfC', 'Lances OF conseguidos', 'attacking', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cr C']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Rem %']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+      )),
+    metric('lancesOfC90', 'Lances OF conseguidos/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cr C']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Rem %']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('pctLancesOf', '% Lances ofensivos conseguidos', 'attacking', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Cr C']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Rem %']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch']),
+        ctx.pf(r['Cr T']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90,
+      ), { decimals: 2 }),
 
-    // ── OFFENSIVE PLAYS ──
-    { key: 'lancesOfT', label: 'Lances Of. Tentados', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Remates']) + ctx.pf(r['Passes Ch']) + ctx.pf(r['Fnt']) + ctx.pf(r['Cr T']) },
-    { key: 'lancesOf90', label: 'Lances Of/90', category: 'attacking', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']) + ctx.pf(r['Passes Ch']) + ctx.pf(r['Fnt']) + ctx.pf(r['Cr T']), ctx.j90) },
-    { key: 'lancesOfC', label: 'Lances Of. Conseguidos', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Rem %']) + ctx.pf(r['Assist.']) + ctx.pf(r['Cr C']) },
-    { key: 'lancesOfC90', label: 'Lances Of C/90', category: 'attacking', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Rem %']) + ctx.pf(r['Assist.']) + ctx.pf(r['Cr C']), ctx.j90) },
+    metric('lancesDefT', 'Lances defensivos Tentados', 'defending', 'number',
+      (r, ctx) => (
+        ctx.pf(r['EPG']) * 3 + ctx.pf(r['Cab A']) + ctx.pf(r['T Desa'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Alívios']) + ctx.pf(r['Blq'])
+        + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Faltas Cometidas'])
+      )),
+    metric('lancesDefT90', 'Lances defensivos tentados/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['EPG']) * 3 + ctx.pf(r['Cab A']) + ctx.pf(r['T Desa'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Alívios']) + ctx.pf(r['Blq'])
+        + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Faltas Cometidas']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('lancesDefC', 'Lances DEF conseguidos', 'defending', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Alívios']) + ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq'])
+        + ctx.pf(r['Crt D'])
+      )),
+    metric('lancesDefC90', 'Lances DEF conseguidos/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Alívios']) + ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq'])
+        + ctx.pf(r['Crt D']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('pctLancesDef', '% Lances defensivos conseguidos', 'defending', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Alívios']) + ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq'])
+        + ctx.pf(r['Crt D']),
+        ctx.pf(r['EPG']) * 3 + ctx.pf(r['Cab A']) + ctx.pf(r['T Desa'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Alívios']) + ctx.pf(r['Blq'])
+        + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Faltas Cometidas']),
+      ), { decimals: 2 }),
 
-    // ── CREATION ADVANCED ──
-    { key: 'acoesFinalizacao', label: 'Ações de Finalização', category: 'shooting', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Remates']) + ctx.pf(r['Cabs']) },
-    { key: 'acoesFinalizacao90', label: 'Ações Fin/90', category: 'shooting', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']) + ctx.pf(r['Cabs']), ctx.j90) },
-    { key: 'chancesCriadas', label: 'Chances Criadas', category: 'creation', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG']) },
-    { key: 'chances90', label: 'Chances/90', category: 'creation', format: 'number', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG']), ctx.j90) },
+    metric('lancesTotais', 'Lances Tentados (Ataque e Defesa)', 'general', 'number',
+      (r, ctx) => (
+        ctx.pf(r['EPG']) * 3 + ctx.pf(r['Cab A']) + ctx.pf(r['T Desa'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Alívios']) + ctx.pf(r['Blq'])
+        + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Faltas Cometidas'])
+        + ctx.pf(r['Cr T']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+        + ctx.pf(r['Pas A'])
+      )),
+    metric('lancesConseguidosGlobal', 'Lances Conseguidos (ATA e DEF)', 'general', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Alívios']) + ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq'])
+        + ctx.pf(r['Crt D']) + ctx.pf(r['Cr C']) + ctx.pf(r['Fnt'])
+        + ctx.pf(r['Fj']) + ctx.pf(r['Rem %']) + ctx.pf(r['OCG'])
+        + ctx.pf(r['Passes Ch']) + ctx.pf(r['Ps C'])
+      )),
+    metric('pctAcertoGlobal', '% Acertos Global', 'general', 'percentage',
+      (r, ctx) => ctx.pct(
+        ctx.pf(r['Cabs']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt'])
+        + ctx.pf(r['Alívios']) + ctx.pf(r['Blq']) + ctx.pf(r['Rems Bloq'])
+        + ctx.pf(r['Crt D']) + ctx.pf(r['Cr C']) + ctx.pf(r['Fnt'])
+        + ctx.pf(r['Fj']) + ctx.pf(r['Rem %']) + ctx.pf(r['OCG'])
+        + ctx.pf(r['Passes Ch']) + ctx.pf(r['Ps C']),
+        ctx.pf(r['EPG']) * 3 + ctx.pf(r['Cab A']) + ctx.pf(r['T Desa'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Alívios']) + ctx.pf(r['Blq'])
+        + ctx.pf(r['Rems Bloq']) + ctx.pf(r['Faltas Cometidas'])
+        + ctx.pf(r['Cr T']) + ctx.pf(r['Fnt']) + ctx.pf(r['Fj'])
+        + ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+        + ctx.pf(r['Pas A']),
+      ), { decimals: 2 }),
 
-    // ── PENALTIES ──
-    { key: 'pensBatidos', label: 'Pênaltis Batidos', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Pens']) },
-    { key: 'pensMarcados', label: 'Pênaltis Marcados', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Pens M']) },
-    { key: 'pensPerdidos', label: 'Pênaltis Perdidos', category: 'attacking', format: 'integer', displayInTable: false, lowerIsBetter: true,
-      formula: (r, ctx) => ctx.pf(r['Pens']) - ctx.pf(r['Pens M']) },
-    { key: 'pctPen', label: '% Conv. Pênalti', category: 'attacking', format: 'percentage', displayInTable: false, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Pens M']), ctx.pf(r['Pens'])) },
+    metric('fintas', 'Fintas', 'attacking', 'integer',
+      (r, ctx) => ctx.pf(r['Fnt'])),
+    metric('fintas90', 'Fintas/90', 'attacking', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Fnt']), ctx.j90), { decimals: 2 }),
+    metric('jogadasCriacao', 'Jogadas de Criação', 'creation', 'number',
+      (r, ctx) => ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG']) + ctx.pf(r['Cr C'])),
+    metric('jogadasCriacao90', 'Criação/90', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG']) + ctx.pf(r['Cr C']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('tentativasGol', 'Tentativas de marcar um gol', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])),
+    metric('tentativasGol90', 'Tentativas de marcar um gol/90', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Remates']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('rematesForaTotal', 'Tentativas totais de remate de fora da área', 'shooting', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+      )),
+    metric('rematesFora90', 'Tentativas de Remates de fora da área /90', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['Remates de fora da área em cada 90 minutes']),
+      { decimals: 2 }),
 
-    // ── NOTA ──
-    { key: 'notaMedia', label: 'Nota Média', category: 'general', format: 'number', decimals: 2, displayInTable: true, lowerIsBetter: false,
-      formula: (r, ctx) => ctx.pf(r['Classificação']) },
+    metric('participacoes', 'Participações do jogador', 'general', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cr T']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Press. conc.']) + ctx.pf(r['Cab A'])
+        + ctx.pf(r['Fnt']) + ctx.pf(r['Remates']) + ctx.pf(r['Pens'])
+        + ctx.pf(r['Remates em livres']) + ctx.pf(r['Pas A'])
+      )),
+    metric('participacoes90', 'Participações do jogador /90', 'general', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cr T']) + ctx.pf(r['Des C']) + ctx.pf(r['Crt D'])
+        + ctx.pf(r['Crt']) + ctx.pf(r['Press. conc.']) + ctx.pf(r['Cab A'])
+        + ctx.pf(r['Fnt']) + ctx.pf(r['Remates']) + ctx.pf(r['Pens'])
+        + ctx.pf(r['Remates em livres']) + ctx.pf(r['Pas A']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('acoesUltimoTerco', 'Ações no último terço', 'attacking', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Golos']) * 1.5 + ctx.pf(r['Assist.']) * 1.5
+        + ctx.pf(r['Fnt']) + ctx.pf(r['OCG']) + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Rem %'])
+      )),
+    metric('acoesGeraramFin', 'Ações que geraram finalizações ao gol', 'creation', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Rem %']) + ctx.pf(r['xA']) + ctx.pf(r['OCG'])
+        + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+        + ctx.pf(r['Golos']) * 0.5 + ctx.pf(r['Assist.']) * 0.5
+      )),
+    metric('acoesGeraramFin90', 'Ações que geraram finalizações ao gol /90', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Rem %']) + ctx.pf(r['xA']) + ctx.pf(r['OCG'])
+        + ctx.pf(r['Passes Ch'])
+        + ctx.pf(r['Remates de fora da área em cada 90 minutes']) * ctx.j90
+        + ctx.pf(r['Golos']) * 0.5 + ctx.pf(r['Assist.']) * 0.5,
+        ctx.j90,
+      ), { decimals: 2 }),
+
+    metric('passD', 'Passes Decisivos', 'creation', 'integer',
+      (r, ctx) => ctx.pf(r['Passes Ch'])),
+    metric('passD90', 'Pass D /90', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Passes Ch']), ctx.j90), { decimals: 2 }),
+    metric('passDecParaAst', 'Passes Decisivos pra uma assistência', 'creation', 'number',
+      (r, ctx) => minutesFallback(
+        ctx.pf(r['Passes Ch']),
+        ctx.pf(r['Assist.']),
+        70,
+      ), { decimals: 2, lowerIsBetter: true }),
+    metric('passDecConvertidos', 'Pass Decisivos que se converteram em assistências', 'creation', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Assist.']), ctx.pf(r['Passes Ch'])),
+      { decimals: 2 }),
+    metric('chancesDespEquipe', 'Assistências Claras que a Equipe desperdiçou', 'creation', 'number',
+      (r, ctx) => ctx.pf(r['xA']) - ctx.pf(r['Assist.']), { decimals: 2 }),
+    metric('xAResult', 'xA / Passe Decisivo', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['xA']), ctx.pf(r['Passes Ch'])),
+      { decimals: 2 }),
+    metric('acoesComBola', 'Ações com Bola', 'passing', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cr T']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt'])
+        + ctx.pf(r['Passes Ch'])
+      )),
+    metric('acoesComBola90', 'Ações com Bola/90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cr T']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt'])
+        + ctx.pf(r['Passes Ch']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('minPorPassD', 'Minutos pra fazer um Passe Decisivo', 'creation', 'number',
+      (r, ctx) => minutesFallback(ctx.pf(r['Minutos']), ctx.pf(r['Passes Ch']), 700),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('minPorChancePerigosa', 'Minutos pra criar uma chance perigosa', 'creation', 'number',
+      () => 700, { decimals: 2, lowerIsBetter: true }),
+
+    metric('passesT90', 'Passes Tentados /90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Pas A']), ctx.j90), { decimals: 2 }),
+    metric('passesC90', 'Passes Completados /90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Ps C']), ctx.j90), { decimals: 2 }),
+    metric('pctPassesCertos', '% Passes', 'passing', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Ps C']), ctx.pf(r['Pas A'])),
+      { decimals: 2, displayInTable: true }),
+
+    metric('distancia', 'Distância percorrida', 'physical', 'number',
+      (r, ctx) => ctx.pf(r['Distância']), { decimals: 2 }),
+    metric('dist90', 'Distância percorrida/90', 'physical', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Distância']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('velocidadeMedia', 'Velocidade Média (em km/h)', 'physical', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Minutos']) === 0
+          ? 0
+          : ctx.pf(r['Distância']) * 60 / ctx.pf(r['Minutos'])
+      ), { decimals: 3 }),
+    metric('sprintsTotal', 'Sprints de alta intensidade', 'physical', 'number',
+      (r, ctx) => ctx.pf(r['Sprints/90']) * ctx.j90, { decimals: 2 }),
+    metric('sprints90', 'Sprints/90', 'physical', 'number',
+      (r, ctx) => ctx.pf(r['Sprints/90']), { decimals: 2 }),
+
+    metric('possDesp', 'Posse Desperdiçada', 'passing', 'number',
+      (r, ctx) => (
+        ctx.pf(r['Cr T']) - ctx.pf(r['Cr C'])
+        + ctx.pf(r['Cab A']) - ctx.pf(r['Cabs'])
+        + ctx.pf(r['Remates']) - ctx.pf(r['Rem %'])
+        + ctx.pf(r['Pas A']) - ctx.pf(r['Ps C'])
+      ), { lowerIsBetter: true }),
+    metric('possDesp90', 'Posse Desperdiçada /90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['Cr T']) - ctx.pf(r['Cr C'])
+        + ctx.pf(r['Cab A']) - ctx.pf(r['Cabs'])
+        + ctx.pf(r['Remates']) - ctx.pf(r['Rem %'])
+        + ctx.pf(r['Pas A']) - ctx.pf(r['Ps C']),
+        ctx.j90,
+      ), { decimals: 2, lowerIsBetter: true }),
+    metric('possPerd90', 'Posse Perdida/90', 'passing', 'number',
+      (r, ctx) => ctx.pf(r['Poss Perd/90']),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('pontuacaoRecebida', 'Pontuação recebida', 'general', 'number',
+      (r, ctx) => rating(r['Classificação'], ctx.pf) * ctx.j90, { decimals: 2 }),
+    metric('notaMedia', 'Nota média', 'general', 'number',
+      (r, ctx) => rating(r['Classificação'], ctx.pf),
+      { decimals: 2, displayInTable: true }),
+
+    // Métricas canônicas já expostas pelo site e mantidas por compatibilidade.
+    metric('cruzT', 'Cruzamentos Tentados (raw)', 'creation', 'integer',
+      (r, ctx) => ctx.pf(r['Cr T'])),
+    metric('cruzC', 'Cruzamentos Certos (raw)', 'creation', 'integer',
+      (r, ctx) => ctx.pf(r['Cr C'])),
+    metric('pctCruz', '% Cruzamentos (raw)', 'creation', 'percentage',
+      (r, ctx) => ctx.pct(ctx.pf(r['Cr C']), ctx.pf(r['Cr T'])), { decimals: 2 }),
+    metric('cabsDisp90', 'Cabeceios Disputados/90', 'aerial', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Cab A']), ctx.j90), { decimals: 2 }),
+    metric('interceptacoes', 'Interceptações (raw)', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Crt'])),
+    metric('int90', 'Interceptações/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Crt']), ctx.j90), { decimals: 2 }),
+    metric('bloqueios', 'Bloqueios (raw)', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Blq'])),
+    metric('bloq90', 'Bloqueios/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Blq']), ctx.j90), { decimals: 2 }),
+    metric('remsBloq', 'Remates Bloqueados (raw)', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Rems Bloq'])),
+    metric('remsBloq90', 'Remates Bloqueados/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Rems Bloq']), ctx.j90), { decimals: 2 }),
+    metric('alivios', 'Alívios (raw)', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Alívios'])),
+    metric('alivios90', 'Alívios/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Alívios']), ctx.j90), { decimals: 2 }),
+    metric('crtD', 'Cortes Decisivos (raw)', 'defending', 'integer',
+      (r, ctx) => ctx.pf(r['Crt D'])),
+    metric('crtD90', 'Cortes Decisivos/90', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Crt D']), ctx.j90), { decimals: 2 }),
+    metric('pressaoT90', 'Pressão Tentada/90', 'pressing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Press. tent.']), ctx.j90), { decimals: 2 }),
+    metric('pressaoG90', 'Pressão Concretizada/90', 'pressing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Press. conc.']), ctx.j90),
+      { decimals: 2, displayInTable: true }),
+    metric('possGanha90', 'Posse Ganha/90 (raw)', 'pressing', 'number',
+      (r, ctx) => ctx.pf(r['Poss Con/90']), { decimals: 2 }),
+    metric('passesT', 'Passes Tentados (raw)', 'passing', 'integer',
+      (r, ctx) => ctx.pf(r['Pas A'])),
+    metric('passesC', 'Passes Completados (raw)', 'passing', 'integer',
+      (r, ctx) => ctx.pf(r['Ps C'])),
+    metric('passesErr', 'Passes Errados', 'passing', 'integer',
+      (r, ctx) => ctx.pf(r['Pas A']) - ctx.pf(r['Ps C']), { lowerIsBetter: true }),
+    metric('passesErr90', 'Passes Errados/90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Pas A']) - ctx.pf(r['Ps C']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('passesProgr', 'Passes Progressivos (raw)', 'passing', 'integer',
+      (r, ctx) => ctx.pf(r['PeP'])),
+    metric('passesProgr90', 'Passes Progressivos/90', 'passing', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['PeP']), ctx.j90), { decimals: 2 }),
+    metric('errosGol', 'Erros que geraram gol', 'discipline', 'integer',
+      (r, ctx) => ctx.pf(r['EPG']), { lowerIsBetter: true }),
+    metric('erros90', 'Erros que geraram gol/90', 'discipline', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['EPG']), ctx.j90),
+      { decimals: 2, lowerIsBetter: true }),
+    metric('desT90', 'Desarmes Tentados/90 (canônico)', 'defending', 'number',
+      (r, ctx) => ctx.sDiv(
+        ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']),
+        ctx.j90,
+      ), { decimals: 2 }),
+    metric('acoesFinalizacao', 'Ações de Finalização (canônico)', 'shooting', 'number',
+      (r, ctx) => ctx.pf(r['Remates']) + ctx.pf(r['Cabs'])),
+    metric('acoesFinalizacao90', 'Ações de Finalização/90 (canônico)', 'shooting', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Remates']) + ctx.pf(r['Cabs']), ctx.j90),
+      { decimals: 2 }),
+    metric('chancesCriadas', 'Chances Criadas (canônico)', 'creation', 'number',
+      (r, ctx) => ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG'])),
+    metric('chances90', 'Chances Criadas/90 (canônico)', 'creation', 'number',
+      (r, ctx) => ctx.sDiv(ctx.pf(r['Passes Ch']) + ctx.pf(r['OCG']), ctx.j90),
+      { decimals: 2 }),
   ],
 }

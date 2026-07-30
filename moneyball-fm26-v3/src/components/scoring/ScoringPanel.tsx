@@ -4,6 +4,7 @@ import type { ScoringProfile, WeightedMetric } from '@/types/scoring.ts'
 import type { PositionKey } from '@/types/position.ts'
 import { WeightSlider } from './WeightSlider.tsx'
 import { saveProfile, getProfilesForPosition, deleteProfile } from '@/db/profileStore.ts'
+import { getPresetsForPosition } from '@/config/presets/index.ts'
 
 interface ScoringPanelProps {
   positionKey: PositionKey
@@ -20,8 +21,14 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
 
   // Load saved profiles
   const loadProfiles = useCallback(async () => {
-    const profiles = await getProfilesForPosition(positionKey)
-    setSavedProfiles(profiles)
+    const customProfiles = await getProfilesForPosition(positionKey)
+    const builtInProfiles: ScoringProfile[] = getPresetsForPosition(positionKey).map((preset) => ({
+      ...preset,
+      isBuiltIn: true,
+      createdAt: 0,
+      updatedAt: 0,
+    }))
+    setSavedProfiles([...builtInProfiles, ...customProfiles])
   }, [positionKey])
 
   // Available metrics (not yet selected)

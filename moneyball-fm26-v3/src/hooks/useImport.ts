@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { smartParse } from '@/engine/parser.ts'
 import { deriveAll } from '@/engine/derive.ts'
 import { detectPosition } from '@/engine/positionDetector.ts'
-import { setPlayersForPosition } from '@/db/playerStore.ts'
+import { clearPosition, setPlayersForPosition } from '@/db/playerStore.ts'
 import { useAppStore } from '@/store/appStore.ts'
 import type { PositionKey } from '@/types/position.ts'
 import type { PositionConfig } from '@/config/positions/types.ts'
@@ -18,6 +18,7 @@ interface ImportState {
 }
 
 export function useImport(positionConfigs: Record<PositionKey, PositionConfig>) {
+  const [clearing, setClearing] = useState(false)
   const [state, setState] = useState<ImportState>({
     loading: false,
     error: null,
@@ -87,5 +88,23 @@ export function useImport(positionConfigs: Record<PositionKey, PositionConfig>) 
     [currentPosition, positionConfigs, setImportPanelOpen],
   )
 
-  return { ...state, importData }
+  const clearData = useCallback(async (): Promise<boolean> => {
+    setClearing(true)
+    setState((current) => ({ ...current, error: null, lastResult: null }))
+
+    try {
+      await clearPosition(currentPosition)
+      return true
+    } catch (err) {
+      setState((current) => ({
+        ...current,
+        error: `Erro ao limpar dados: ${err instanceof Error ? err.message : String(err)}`,
+      }))
+      return false
+    } finally {
+      setClearing(false)
+    }
+  }, [currentPosition])
+
+  return { ...state, importData, clearData, clearing }
 }
