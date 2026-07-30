@@ -38,7 +38,7 @@ export function RangeSlider({ label, min, max, value, onChange, step = 1, format
           step={step}
           value={currentMin}
           onChange={(e) => onChange([Number(e.target.value), currentMax])}
-          className="flex-1 accent-blue-500"
+          className="flex-1"
         />
         <input
           type="range"
@@ -47,7 +47,7 @@ export function RangeSlider({ label, min, max, value, onChange, step = 1, format
           step={step}
           value={currentMax}
           onChange={(e) => onChange([currentMin, Number(e.target.value)])}
-          className="flex-1 accent-blue-500"
+          className="flex-1"
         />
         <span className="text-xs font-mono w-12 text-right" style={{ color: 'var(--color-text-secondary)' }}>
           {fmt(currentMax)}

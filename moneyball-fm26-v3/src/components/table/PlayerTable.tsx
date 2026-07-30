@@ -17,12 +17,7 @@ export function PlayerTable({ players, displayMetrics, columnStats, onPlayerClic
   const sortDirection = useAppStore((s) => s.sortDirection)
   const setSort = useAppStore((s) => s.setSort)
 
-  const rankEmoji = (i: number) => {
-    if (i === 0) return '🥇'
-    if (i === 1) return '🥈'
-    if (i === 2) return '🥉'
-    return String(i + 1)
-  }
+  const rankDisplay = (i: number) => String(i + 1)
 
   const formatValue = (val: unknown, metric: MetricDefinition) => {
     if (val == null || val === '') return '-'
@@ -42,7 +37,7 @@ export function PlayerTable({ players, displayMetrics, columnStats, onPlayerClic
   }
 
   return (
-    <div className="overflow-x-auto" style={{ borderRadius: '0.5rem', border: '1px solid var(--color-border)' }}>
+    <div className="overflow-x-auto" style={{ borderRadius: '4px', border: '1px solid var(--slate)' }}>
       <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--color-border)', backgroundColor: 'var(--color-bg-secondary)' }}>
@@ -90,8 +85,15 @@ export function PlayerTable({ players, displayMetrics, columnStats, onPlayerClic
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-bg-hover)' }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = zebraBg }}
               >
-                <td className="text-center font-mono text-xs" style={{ color: 'var(--color-text-muted)', padding: '0.625rem 0.75rem' }}>
-                  {rankEmoji(index)}
+                <td
+                  className="text-center font-mono text-xs"
+                  style={{
+                    color: index < 3 ? 'var(--pitch)' : 'var(--color-text-muted)',
+                    fontWeight: index < 3 ? 700 : 400,
+                    padding: '0.625rem 0.75rem',
+                  }}
+                >
+                  {rankDisplay(index)}
                 </td>
                 <td className="font-medium" style={{ color: 'var(--color-text-primary)', padding: '0.625rem 0.75rem' }}>
                   {player.Jogador}

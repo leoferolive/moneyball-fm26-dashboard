@@ -4,12 +4,12 @@ import type { ScoringProfile, WeightedMetric } from '@/types/scoring.ts'
 import type { PositionKey } from '@/types/position.ts'
 import { WeightSlider } from './WeightSlider.tsx'
 import { saveProfile, getProfilesForPosition, deleteProfile } from '@/db/profileStore.ts'
-import { getPresetsForPosition, type Preset } from '@/config/presets/index.ts'
+import { getPresetsForPosition } from '@/config/presets/index.ts'
 
 interface ScoringPanelProps {
   positionKey: PositionKey
   metrics: MetricDefinition[]
-  onProfileChange: (weights: WeightedMetric[], isAbsolute?: boolean) => void
+  onProfileChange: (weights: WeightedMetric[]) => void
 }
 
 export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringPanelProps) {
@@ -18,15 +18,17 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
   const [savedProfiles, setSavedProfiles] = useState<ScoringProfile[]>([])
   const [profileName, setProfileName] = useState('')
   const [showMetricPicker, setShowMetricPicker] = useState(false)
-  const [activePresetId, setActivePresetId] = useState<string | null>(null)
-
-  // Built-in presets for this position
-  const builtInPresets = useMemo(() => getPresetsForPosition(positionKey), [positionKey])
 
   // Load saved profiles
   const loadProfiles = useCallback(async () => {
-    const profiles = await getProfilesForPosition(positionKey)
-    setSavedProfiles(profiles)
+    const customProfiles = await getProfilesForPosition(positionKey)
+    const builtInProfiles: ScoringProfile[] = getPresetsForPosition(positionKey).map((preset) => ({
+      ...preset,
+      isBuiltIn: true,
+      createdAt: 0,
+      updatedAt: 0,
+    }))
+    setSavedProfiles([...builtInProfiles, ...customProfiles])
   }, [positionKey])
 
   // Available metrics (not yet selected)
@@ -55,29 +57,20 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
   const handleAddMetric = useCallback((key: string) => {
     const newWeights = [...weights, { metricKey: key, weight: 50 }]
     setWeights(newWeights)
-    setActivePresetId(null)
-    onProfileChange(newWeights, false)
+    onProfileChange(newWeights)
   }, [weights, onProfileChange])
 
   const handleWeightChange = useCallback((key: string, weight: number) => {
     const newWeights = weights.map((w) => w.metricKey === key ? { ...w, weight } : w)
     setWeights(newWeights)
-    setActivePresetId(null)
-    onProfileChange(newWeights, false)
+    onProfileChange(newWeights)
   }, [weights, onProfileChange])
 
   const handleRemoveMetric = useCallback((key: string) => {
     const newWeights = weights.filter((w) => w.metricKey !== key)
     setWeights(newWeights)
-    setActivePresetId(null)
-    onProfileChange(newWeights, false)
+    onProfileChange(newWeights)
   }, [weights, onProfileChange])
-
-  const handleLoadPreset = useCallback((preset: Preset) => {
-    setWeights(preset.weights)
-    setActivePresetId(preset.id)
-    onProfileChange(preset.weights, preset.isAbsolute)
-  }, [onProfileChange])
 
   const handleSaveProfile = useCallback(async () => {
     if (!profileName.trim() || weights.length === 0) return
@@ -97,8 +90,7 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
 
   const handleLoadProfile = useCallback((profile: ScoringProfile) => {
     setWeights(profile.weights)
-    setActivePresetId(null)
-    onProfileChange(profile.weights, profile.isAbsolute)
+    onProfileChange(profile.weights)
   }, [onProfileChange])
 
   const handleDeleteProfile = useCallback(async (id: string) => {
@@ -108,8 +100,7 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
 
   const handleClear = useCallback(() => {
     setWeights([])
-    setActivePresetId(null)
-    onProfileChange([], false)
+    onProfileChange([])
   }, [onProfileChange])
 
   if (!isOpen) {
@@ -141,32 +132,6 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
           Fechar
         </button>
       </div>
-
-      {/* Built-in presets */}
-      {builtInPresets.length > 0 && (
-        <div className="mb-3">
-          <p className="text-xs mb-1" style={{ color: 'var(--color-text-muted)' }}>Presets:</p>
-          <div className="flex flex-wrap gap-1">
-            {builtInPresets.map((preset) => (
-              <button
-                key={preset.id}
-                onClick={() => handleLoadPreset(preset)}
-                className="text-xs px-2 py-1 rounded cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: activePresetId === preset.id
-                    ? (preset.isAbsolute ? 'var(--color-score-s)' : 'var(--color-accent)')
-                    : 'var(--color-bg-tertiary)',
-                  color: activePresetId === preset.id ? '#fff' : 'var(--color-text-secondary)',
-                  border: preset.isAbsolute ? '1px solid var(--color-score-s)' : '1px solid var(--color-border)',
-                }}
-                title={preset.description}
-              >
-                {preset.isAbsolute ? '⚡ ' : ''}{preset.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Saved profiles */}
       {savedProfiles.length > 0 && (

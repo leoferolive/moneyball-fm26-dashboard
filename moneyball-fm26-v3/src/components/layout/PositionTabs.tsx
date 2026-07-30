@@ -11,8 +11,13 @@ export function PositionTabs({ playerCounts }: PositionTabsProps) {
 
   return (
     <nav
-      className="flex gap-1 overflow-x-auto"
-      style={{ borderBottom: '1px solid var(--color-border)', paddingTop: '0.75rem', paddingBottom: '0.75rem', marginTop: '0.5rem' }}
+      className="flex gap-0.5 overflow-x-auto"
+      style={{
+        borderBottom: '1px solid var(--slate)',
+        paddingTop: '0.625rem',
+        paddingBottom: 0,
+        marginTop: '0.5rem',
+      }}
     >
       {POSITION_ORDER.map((key) => {
         const meta = POSITION_META[key]
@@ -23,25 +28,41 @@ export function PositionTabs({ playerCounts }: PositionTabsProps) {
           <button
             key={key}
             onClick={() => setCurrentPosition(key as PositionKey)}
-            className="flex items-center gap-1.5 text-sm whitespace-nowrap transition-all cursor-pointer"
+            className="flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer"
             style={{
-              padding: '0.5rem 0.875rem',
-              borderRadius: '0.375rem',
-              backgroundColor: isActive ? 'var(--color-bg-tertiary)' : 'transparent',
-              color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-              borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+              padding: '0.5rem 0.875rem 0.625rem',
+              fontSize: '0.8rem',
+              color: isActive ? 'var(--chalk)' : 'var(--chalk-ghost)',
               fontWeight: isActive ? 600 : 400,
+              borderBottom: isActive
+                ? '3px solid var(--pitch)'
+                : '3px solid transparent',
+              background: 'transparent',
+              letterSpacing: '0.01em',
             }}
           >
-            <span>{meta.emoji}</span>
+            <span
+              className="font-mono"
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: isActive ? 'var(--pitch)' : 'var(--chalk-ghost)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {meta.code}
+            </span>
             <span>{meta.name}</span>
             {count > 0 && (
               <span
-                className="text-xs px-1.5 py-0.5 rounded-full font-mono"
+                className="font-mono"
                 style={{
-                  backgroundColor: isActive ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                  color: isActive ? '#fff' : 'var(--color-text-muted)',
-                  fontSize: '0.65rem',
+                  fontSize: '0.6rem',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '3px',
+                  backgroundColor: isActive ? 'var(--pitch)' : 'var(--slate)',
+                  color: isActive ? '#fff' : 'var(--chalk-ghost)',
+                  fontWeight: 600,
                 }}
               >
                 {count}

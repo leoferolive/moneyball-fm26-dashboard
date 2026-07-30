@@ -38,8 +38,7 @@ export const timeConfig: PositionConfig = {
       formula: (_r, ctx) => ctx.j90,
       displayInTable: true,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 1,
+      format: 'integer',
     },
     {
       key: 'altura',
@@ -65,7 +64,7 @@ export const timeConfig: PositionConfig = {
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 2,
+      decimals: 1,
     },
     {
       key: 'passesC90',
@@ -75,7 +74,7 @@ export const timeConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 2,
+      decimals: 1,
     },
     {
       key: 'passesErrados90',
@@ -129,11 +128,10 @@ export const timeConfig: PositionConfig = {
       key: 'possePerdida',
       label: 'Posse Perdida',
       category: 'passing',
-      formula: (r, ctx) => ctx.rnd(ctx.pf(r['Poss Perd/90']) * ctx.j90),
+      formula: (r, ctx) => ctx.pf(r['Poss Perd/90']) * ctx.j90,
       displayInTable: false,
       lowerIsBetter: true,
-      format: 'number',
-      decimals: 1,
+      format: 'integer',
     },
     {
       key: 'possePerdida90',
@@ -171,7 +169,7 @@ export const timeConfig: PositionConfig = {
       label: 'Ações com Bola',
       category: 'attacking',
       formula: (r, ctx) =>
-        ctx.pf(r['Cr T']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt']) + ctx.pf(r['Minutos']),
+        ctx.pf(r['CT-JA']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt']) + ctx.pf(r['Minutos']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -181,13 +179,13 @@ export const timeConfig: PositionConfig = {
       label: 'Ações Bola/90',
       category: 'attacking',
       formula: (r, ctx) => {
-        const total = ctx.pf(r['Cr T']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt']) + ctx.pf(r['Minutos'])
+        const total = ctx.pf(r['CT-JA']) + ctx.pf(r['Remates']) + ctx.pf(r['Fnt']) + ctx.pf(r['Minutos'])
         return ctx.sDiv(total, ctx.j90)
       },
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 2,
+      decimals: 1,
     },
     {
       key: 'gols',
@@ -252,18 +250,17 @@ export const timeConfig: PositionConfig = {
       label: 'Ações Finalização',
       category: 'shooting',
       formula: (r, ctx) =>
-        ctx.pf(r['Rem %']) + ctx.pf(r['xA']) + ctx.pf(r['Remates']) + ctx.pf(r['Golos']),
+        ctx.pf(r['OCG']) + ctx.pf(r['xA']) + ctx.pf(r['Rem %']) + ctx.pf(r['Golos']),
       displayInTable: false,
       lowerIsBetter: false,
-      format: 'number',
-      decimals: 1,
+      format: 'integer',
     },
     {
       key: 'acoesFin90',
       label: 'Ações Fin/90',
       category: 'shooting',
       formula: (r, ctx) => {
-        const total = ctx.pf(r['Rem %']) + ctx.pf(r['xA']) + ctx.pf(r['Remates']) + ctx.pf(r['Golos'])
+        const total = ctx.pf(r['OCG']) + ctx.pf(r['xA']) + ctx.pf(r['Rem %']) + ctx.pf(r['Golos'])
         return ctx.sDiv(total, ctx.j90)
       },
       displayInTable: false,
@@ -344,7 +341,7 @@ export const timeConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     // ── creation ─────────────────────────────────────────────
     {
@@ -373,7 +370,7 @@ export const timeConfig: PositionConfig = {
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     {
       key: 'xA',
@@ -466,7 +463,7 @@ export const timeConfig: PositionConfig = {
       key: 'cabsDisputados',
       label: 'Cabeceios Disputados',
       category: 'aerial',
-      formula: (r, ctx) => ctx.pf(r['Cabs']),
+      formula: (r, ctx) => ctx.pf(r['Cab A']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -475,17 +472,17 @@ export const timeConfig: PositionConfig = {
       key: 'cabsDisp90',
       label: 'Cabs Disp/90',
       category: 'aerial',
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cabs']), ctx.j90),
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cab A']), ctx.j90),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
-      decimals: 2,
+      decimals: 1,
     },
     {
       key: 'cabsGanhos',
       label: 'Cabeceios Ganhos',
       category: 'aerial',
-      formula: (r, ctx) => ctx.pf(r['Cab A']),
+      formula: (r, ctx) => ctx.pf(r['Cabs']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -494,7 +491,7 @@ export const timeConfig: PositionConfig = {
       key: 'cabsG90',
       label: 'Cabs G/90',
       category: 'aerial',
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cab A']), ctx.j90),
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Cabs']), ctx.j90),
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
@@ -504,18 +501,19 @@ export const timeConfig: PositionConfig = {
       key: 'pctCabs',
       label: '% Cabs',
       category: 'aerial',
-      formula: (r, ctx) => ctx.pct(ctx.pf(r['Cab A']), ctx.pf(r['Cabs'])),
+      formula: (r, ctx) => ctx.pct(ctx.pf(r['Cabs']), ctx.pf(r['Cab A'])),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     // ── defending ────────────────────────────────────────────
     {
       key: 'desarmesTentados',
       label: 'Desarmes Tentados',
       category: 'defending',
-      formula: (r, ctx) => ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']),
+      formula: (r, ctx) =>
+        ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Crt D']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -525,17 +523,29 @@ export const timeConfig: PositionConfig = {
       label: 'Des T/90',
       category: 'defending',
       formula: (r, ctx) =>
-        ctx.sDiv(ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']), ctx.j90),
+        ctx.sDiv(
+          ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Crt D']),
+          ctx.j90,
+        ),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'number',
       decimals: 2,
     },
     {
+      key: 'desarmesGanhos',
+      label: 'Desarmes Ganhos',
+      category: 'defending',
+      formula: (r, ctx) => ctx.pf(r['Des C']) + ctx.pf(r['Crt D']),
+      displayInTable: false,
+      lowerIsBetter: false,
+      format: 'integer',
+    },
+    {
       key: 'desG90',
       label: 'Des G/90',
       category: 'defending',
-      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Des C']), ctx.j90),
+      formula: (r, ctx) => ctx.sDiv(ctx.pf(r['Des C']) + ctx.pf(r['Crt D']), ctx.j90),
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
@@ -546,11 +556,14 @@ export const timeConfig: PositionConfig = {
       label: '% Desarmes',
       category: 'defending',
       formula: (r, ctx) =>
-        ctx.pct(ctx.pf(r['Des C']), ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas'])),
+        ctx.pct(
+          ctx.pf(r['Des C']) + ctx.pf(r['Crt D']),
+          ctx.pf(r['T Desa']) + ctx.pf(r['Faltas Cometidas']) + ctx.pf(r['Crt D']),
+        ),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     // ── discipline (fouls) ───────────────────────────────────
     {
@@ -577,7 +590,7 @@ export const timeConfig: PositionConfig = {
       key: 'chancesBPTentadas',
       label: 'Chances BP Tentadas',
       category: 'setpiece',
-      formula: (r, ctx) => ctx.pf(r['CT-JA']) - ctx.pf(r['Cr T']),
+      formula: (r, ctx) => ctx.pf(r['Cr T']) - ctx.pf(r['CT-JA']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -586,7 +599,7 @@ export const timeConfig: PositionConfig = {
       key: 'chancesBPCriadas',
       label: 'Chances BP Criadas',
       category: 'setpiece',
-      formula: (r, ctx) => ctx.pf(r['CC-JA']) - ctx.pf(r['Cr C']),
+      formula: (r, ctx) => ctx.pf(r['Cr C']) - ctx.pf(r['CC-JA']),
       displayInTable: false,
       lowerIsBetter: false,
       format: 'integer',
@@ -596,14 +609,14 @@ export const timeConfig: PositionConfig = {
       label: '% Aproveitamento BP',
       category: 'setpiece',
       formula: (r, ctx) => {
-        const tentadas = ctx.pf(r['CT-JA']) - ctx.pf(r['Cr T'])
-        const criadas = ctx.pf(r['CC-JA']) - ctx.pf(r['Cr C'])
+        const tentadas = ctx.pf(r['Cr T']) - ctx.pf(r['CT-JA'])
+        const criadas = ctx.pf(r['Cr C']) - ctx.pf(r['CC-JA'])
         return ctx.pct(criadas, tentadas)
       },
       displayInTable: false,
       lowerIsBetter: false,
       format: 'percentage',
-      decimals: 1,
+      decimals: 2,
     },
     // ── physical ─────────────────────────────────────────────
     {
@@ -631,41 +644,32 @@ export const timeConfig: PositionConfig = {
       key: 'notaMedia',
       label: 'Nota Média',
       category: 'general',
-      formula: (r, ctx) => ctx.pf(r['Classificação']),
+      formula: (r, ctx) => {
+        const rating = r['Classificação']?.trim()
+        if (!rating || rating === '-') return 6
+
+        const value = ctx.pf(rating)
+        return value === 0 && !/^[-+]?0(?:[.,]0+)?$/.test(rating) ? 6 : value
+      },
       displayInTable: true,
       lowerIsBetter: false,
       format: 'number',
       decimals: 2,
     },
-    // ── Moneyball Score (planilha original) ────────────────────
-    {
-      key: '_moneyball',
-      label: 'Moneyball Score',
-      category: 'general',
-      formula: (r, ctx) => {
-        const { pf, clamp, rnd } = ctx
-        return clamp(rnd(pf(r['Classificação']) * 10), 0, 100)
-      },
-      displayInTable: false,
-      lowerIsBetter: false,
-      format: 'number',
-      decimals: 2,
-      description: 'Score da planilha original (Nota FM x 10)',
-    },
   ],
 
   defaultTableColumns: [
-    'jogosCompletos',
-    'passesT90',
-    'pctPassesCertos',
-    'xA90',
-    'npxg90',
-    'gols90',
-    'ast90',
-    'cabsG90',
-    'desG90',
-    'faltas90',
-    'dist90',
-    'notaMedia',
+    'Jogos completos',
+    'Passes T/90',
+    '% Passes Certos',
+    'Gols/90',
+    'npxG/90',
+    'xA/90',
+    'Ast/90',
+    'Cabs G/90',
+    'Des G/90',
+    'Faltas/90',
+    'Dist/90',
+    'Nota Média',
   ],
 }

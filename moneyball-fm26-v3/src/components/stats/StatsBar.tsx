@@ -14,24 +14,51 @@ export function StatsBar({ players }: StatsBarProps) {
   const bestFM = Math.max(...players.map((p) => p.NotaFM))
 
   const stats = [
-    { label: 'Jogadores', value: String(count) },
-    { label: 'Melhor Score', value: bestScore.toFixed(1) },
-    { label: 'Média Score', value: avgScore.toFixed(1) },
-    { label: 'Melhor Nota FM', value: bestFM.toFixed(2) },
+    { label: 'JOGADORES', value: String(count) },
+    { label: 'MELHOR', value: bestScore.toFixed(1) },
+    { label: 'MÉDIA', value: avgScore.toFixed(1) },
+    { label: 'NOTA FM', value: bestFM.toFixed(2) },
   ]
 
   return (
-    <div className="flex flex-wrap gap-3 py-3">
-      {stats.map((stat) => (
+    <div
+      className="flex items-center"
+      style={{ padding: '0.5rem 0', gap: '1px' }}
+    >
+      {stats.map((stat, i) => (
         <div
           key={stat.label}
-          className="flex items-center gap-2 px-3 py-1.5 rounded"
-          style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
+          className="flex items-center gap-1.5"
+          style={{
+            padding: '0.375rem 0.75rem',
+            backgroundColor: 'var(--turf-elevated)',
+            borderRadius:
+              i === 0
+                ? '4px 0 0 4px'
+                : i === stats.length - 1
+                  ? '0 4px 4px 0'
+                  : '0',
+          }}
         >
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <span
+            className="font-mono"
+            style={{
+              fontSize: '0.6rem',
+              color: 'var(--chalk-ghost)',
+              letterSpacing: '0.06em',
+              fontWeight: 500,
+            }}
+          >
             {stat.label}
           </span>
-          <span className="text-sm font-bold font-mono" style={{ color: 'var(--color-text-primary)' }}>
+          <span
+            className="font-mono"
+            style={{
+              fontSize: '0.8rem',
+              color: 'var(--chalk)',
+              fontWeight: 700,
+            }}
+          >
             {stat.value}
           </span>
         </div>

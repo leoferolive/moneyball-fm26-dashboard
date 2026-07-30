@@ -2,14 +2,14 @@
 
 Dashboard analítico para Football Manager 2026 com scoring personalizado, gráficos interativos e comparação de jogadores.
 
-Inspirado em plataformas como FBref, StatsBomb e Opta — foco em dados, limpeza visual e profundidade analítica.
+Inspirado em plataformas como FBref, StatsBomb e Opta — foco em dados, limpeza visual e profundidade analítica. Design "Scout Command Center" com paleta navy/verde-campo e tipografia tática.
 
 ## Screenshots
 
 ### Dashboard — Tema Escuro
 ![Dashboard Dark](docs/screenshots/dashboard-dark.png)
 
-Tabela principal com heatmap condicional, zebra striping e métricas derivadas por posição.
+Tabela principal com heatmap condicional, zebra striping, códigos táticos de posição (GK, CB, FB, DM, B2B, AMC, ST) e stats bar estilo trading terminal.
 
 ### Dashboard — Tema Claro
 ![Dashboard Light](docs/screenshots/dashboard-light.png)

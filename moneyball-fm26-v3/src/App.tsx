@@ -29,20 +29,24 @@ function App() {
         <PositionTabs playerCounts={playerCounts} />
 
         {/* View navigation */}
-        <nav className="flex gap-2" style={{ borderBottom: '1px solid var(--color-border)', paddingTop: '0.625rem', paddingBottom: '0.625rem' }}>
+        <nav className="flex gap-1" style={{ paddingTop: '0.625rem', paddingBottom: '0.625rem' }}>
           {(['dashboard', 'charts', 'comparison'] as const).map((view) => {
-            const labels = { dashboard: '📊 Dashboard', charts: '📈 Gráficos', comparison: '🔄 Comparação' }
+            const labels = { dashboard: 'Dashboard', charts: 'Gráficos', comparison: 'Comparação' }
+            const isActive = activeView === view
             return (
               <button
                 key={view}
                 onClick={() => setActiveView(view)}
-                className="cursor-pointer transition-colors"
+                className="cursor-pointer transition-colors font-mono"
                 style={{
-                  fontSize: '0.8rem',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  backgroundColor: activeView === view ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                  color: activeView === view ? '#fff' : 'var(--color-text-secondary)',
+                  fontSize: '0.7rem',
+                  padding: '0.375rem 0.875rem',
+                  borderRadius: '3px',
+                  backgroundColor: isActive ? 'var(--pitch)' : 'var(--turf-elevated)',
+                  color: isActive ? '#fff' : 'var(--chalk-faded)',
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: '0.03em',
+                  textTransform: 'uppercase' as const,
                 }}
               >
                 {labels[view]}

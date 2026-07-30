@@ -7,25 +7,7 @@ export interface Preset {
   description: string
   positionKey: PositionKey
   weights: WeightedMetric[]
-  isAbsolute?: boolean
 }
-
-// ── Moneyball Original (scoring absoluto da planilha) ──────────
-
-const moneyballPresets: Preset[] = [
-  { id: 'mb-goleiros', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'goleiros', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-zagueiros', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'zagueiros', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-laterais', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'laterais', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-volantes', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'volantes', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-b2b', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'b2b', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-armadores', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'armadores', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-avancados', name: 'Moneyball Original', description: 'Scoring da planilha original (FM 35% + Métricas 65%)', positionKey: 'avancados', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-esforco', name: 'Moneyball Original', description: 'Placar de esforço da planilha original', positionKey: 'esforco', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-time', name: 'Moneyball Original', description: 'Nota FM x10 da planilha original', positionKey: 'time', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-  { id: 'mb-overall', name: 'Moneyball Original', description: 'Nota FM x10 da planilha original', positionKey: 'overall', isAbsolute: true, weights: [{ metricKey: '_moneyball', weight: 100 }] },
-]
-
-// ── Goleiros ───────────────────────────────────────────────────
 
 const goleirosPresets: Preset[] = [
   {
@@ -67,8 +49,6 @@ const goleirosPresets: Preset[] = [
   },
 ]
 
-// ── Zagueiros ──────────────────────────────────────────────────
-
 const zagueirosPresets: Preset[] = [
   {
     id: 'cb-aereo', name: 'Zagueiro Aéreo', description: 'Domínio nos duelos aéreos e bolas altas',
@@ -107,8 +87,6 @@ const zagueirosPresets: Preset[] = [
     ],
   },
 ]
-
-// ── Laterais ───────────────────────────────────────────────────
 
 const lateraisPresets: Preset[] = [
   {
@@ -150,8 +128,6 @@ const lateraisPresets: Preset[] = [
     ],
   },
 ]
-
-// ── Volantes ───────────────────────────────────────────────────
 
 const volantesPresets: Preset[] = [
   {
@@ -195,8 +171,6 @@ const volantesPresets: Preset[] = [
   },
 ]
 
-// ── Box-to-Box ─────────────────────────────────────────────────
-
 const b2bPresets: Preset[] = [
   {
     id: 'b2b-ofensivo', name: 'B2B Ofensivo', description: 'Chegada ao ataque, gols e assistências',
@@ -238,8 +212,6 @@ const b2bPresets: Preset[] = [
   },
 ]
 
-// ── Armadores ──────────────────────────────────────────────────
-
 const armadoresPresets: Preset[] = [
   {
     id: 'amc-criativo', name: 'Meia Criativo', description: 'Passes decisivos, chances criadas e xA',
@@ -279,8 +251,6 @@ const armadoresPresets: Preset[] = [
     ],
   },
 ]
-
-// ── Avançados ──────────────────────────────────────────────────
 
 const avancadosPresets: Preset[] = [
   {
@@ -322,8 +292,6 @@ const avancadosPresets: Preset[] = [
   },
 ]
 
-// ── Esforço ────────────────────────────────────────────────────
-
 const esforcoPresets: Preset[] = [
   {
     id: 'esf-intenso', name: 'Intensidade Máxima', description: 'Distância, sprints e pressão',
@@ -338,8 +306,6 @@ const esforcoPresets: Preset[] = [
     ],
   },
 ]
-
-// ── Time ───────────────────────────────────────────────────────
 
 const timePresets: Preset[] = [
   {
@@ -360,12 +326,10 @@ const timePresets: Preset[] = [
       { metricKey: 'desG90', weight: 100 },
       { metricKey: 'cabsG90', weight: 80 },
       { metricKey: 'pctPassesCertos', weight: 60 },
-      { metricKey: 'falhas90', weight: 50 },
+      { metricKey: 'faltas90', weight: 50 },
     ],
   },
 ]
-
-// ── Overall ────────────────────────────────────────────────────
 
 const overallPresets: Preset[] = [
   {
@@ -395,10 +359,7 @@ const overallPresets: Preset[] = [
   },
 ]
 
-// ── Export ──────────────────────────────────────────────────────
-
 const allPresets: Preset[] = [
-  ...moneyballPresets,
   ...goleirosPresets, ...zagueirosPresets, ...lateraisPresets,
   ...volantesPresets, ...b2bPresets, ...armadoresPresets,
   ...avancadosPresets, ...esforcoPresets, ...timePresets, ...overallPresets,

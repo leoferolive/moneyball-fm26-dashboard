@@ -13,9 +13,8 @@ describe('pf (parse float)', () => {
     expect(pf('1.234,56')).toBe(1234.56)
     expect(pf('6,4')).toBe(6.4)
     expect(pf('6,80')).toBe(6.8)
-    // "1.000" is ambiguous — pf treats it as EN decimal (1.0), not PT-BR thousands
-    // PT-BR thousands separator only detected when comma is also present
-    expect(pf('1.000')).toBe(1)
+    expect(pf('1.000')).toBe(1000)
+    expect(pf('2.035')).toBe(2035)
     expect(pf('1.000,50')).toBe(1000.5)
   })
 
@@ -82,6 +81,7 @@ describe('pct (percentage)', () => {
     expect(pct(1, 4)).toBe(25)
     expect(pct(3, 10)).toBe(30)
   })
+
 })
 
 describe('clamp', () => {
