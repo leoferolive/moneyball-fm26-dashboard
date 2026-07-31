@@ -1,5 +1,6 @@
 import { useState, useCallback, type DragEvent } from 'react'
 import { useAppStore } from '@/store/appStore.ts'
+import { ChipButton } from '@/components/ui/ChipButton.tsx'
 
 interface ImportPanelProps {
   onImport: (rawText: string) => void
@@ -56,23 +57,14 @@ export function ImportPanel({
 
   if (!importPanelOpen) {
     return (
-      <div className="py-2 flex items-center gap-4">
-        <button
-          onClick={() => setImportPanelOpen(true)}
-          className="text-sm cursor-pointer"
-          style={{ color: 'var(--color-accent)' }}
-        >
+      <div className="py-2 flex items-center gap-2">
+        <ChipButton onClick={() => setImportPanelOpen(true)} tone="accent">
           + Importar dados
-        </button>
+        </ChipButton>
         {playerCount > 0 && (
-          <button
-            onClick={handleClearData}
-            disabled={clearing}
-            className="text-sm cursor-pointer disabled:opacity-50"
-            style={{ color: 'var(--color-score-c)' }}
-          >
+          <ChipButton onClick={handleClearData} disabled={clearing} tone="danger" className="disabled:opacity-50">
             {clearing ? 'Limpando...' : `Limpar dados da aba (${playerCount})`}
-          </button>
+          </ChipButton>
         )}
       </div>
     )

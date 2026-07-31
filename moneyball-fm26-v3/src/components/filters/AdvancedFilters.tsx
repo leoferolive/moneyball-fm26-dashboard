@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FilterState } from '@/types/filters.ts'
+import { ChipButton } from '@/components/ui/ChipButton.tsx'
 import { RangeSlider } from './RangeSlider.tsx'
 
 interface AdvancedFiltersProps {
@@ -25,18 +26,14 @@ export function AdvancedFilters({ filters, onUpdate, onReset, clubs, nationaliti
   if (!isOpen) {
     return (
       <div className="py-1">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="text-xs cursor-pointer flex items-center gap-1"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
+        <ChipButton onClick={() => setIsOpen(true)} tone={activeCount > 0 ? 'accent' : 'default'}>
           Filtros avançados
           {activeCount > 0 && (
             <span className="px-1.5 rounded-full text-xs" style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}>
               {activeCount}
             </span>
           )}
-        </button>
+        </ChipButton>
       </div>
     )
   }

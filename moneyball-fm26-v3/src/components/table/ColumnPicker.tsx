@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import type { MetricDefinition } from '@/config/positions/types.ts'
 import { CATEGORY_LABELS } from '@/config/categoryLabels.ts'
+import { ChipButton } from '@/components/ui/ChipButton.tsx'
 
 interface ColumnPickerProps {
   metrics: MetricDefinition[]
@@ -42,18 +43,14 @@ export function ColumnPicker({
   if (!isOpen) {
     return (
       <div className="py-2">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="text-sm cursor-pointer flex items-center gap-1"
-          style={{ color: 'var(--color-accent)' }}
-        >
+        <ChipButton onClick={() => setIsOpen(true)} tone={isCustomized ? 'accent' : 'default'}>
           ▦ Colunas ({visibleKeys.size}/{metrics.length})
           {isCustomized && (
             <span className="text-xs px-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}>
               personalizado
             </span>
           )}
-        </button>
+        </ChipButton>
       </div>
     )
   }

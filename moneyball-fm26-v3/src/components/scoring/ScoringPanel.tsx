@@ -4,6 +4,7 @@ import type { ScoringProfile, WeightedMetric } from '@/types/scoring.ts'
 import type { PositionKey } from '@/types/position.ts'
 import { CATEGORY_LABELS } from '@/config/categoryLabels.ts'
 import { WeightSlider } from './WeightSlider.tsx'
+import { ChipButton } from '@/components/ui/ChipButton.tsx'
 import { saveProfile, getProfilesForPosition, deleteProfile } from '@/db/profileStore.ts'
 import { getPresetsForPosition } from '@/config/presets/index.ts'
 
@@ -100,18 +101,14 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
   if (!isOpen) {
     return (
       <div className="py-2">
-        <button
-          onClick={() => { setIsOpen(true); loadProfiles() }}
-          className="text-sm cursor-pointer flex items-center gap-1"
-          style={{ color: 'var(--color-accent)' }}
-        >
+        <ChipButton onClick={() => { setIsOpen(true); loadProfiles() }} tone={weights.length > 0 ? 'accent' : 'default'}>
           ⚙ Scoring Personalizado
           {weights.length > 0 && (
             <span className="text-xs px-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}>
               {weights.length}
             </span>
           )}
-        </button>
+        </ChipButton>
       </div>
     )
   }

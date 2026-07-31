@@ -40,6 +40,15 @@
   /* Sky — secondary blue, open field */
   --sky:            #2970c4;
 
+  /* Tier — escala S/A/B/C e formatação condicional, paleta Okabe-Ito
+     (colorblind-safe): azul→amarelo→vermelhão em vez do
+     vermelho-amarelo-verde padrão, que é a pior combinação possível pra
+     quem tem deuteranopia/protanopia (as duas pontas ficam parecidas). */
+  --tier-s:         #29abe2;
+  --tier-a:         #6fc3f0;
+  --tier-b:         #f0e442;
+  --tier-c:         #e8702a;
+
   /* ── Functional Aliases ────────────────────────────── */
   --color-bg-primary:   var(--turf);
   --color-bg-secondary: var(--turf-raised);
@@ -55,10 +64,10 @@
   --color-accent:       var(--pitch);
   --color-accent-hover: var(--pitch-hover);
 
-  --color-score-s: var(--pitch);
-  --color-score-a: var(--sky);
-  --color-score-b: var(--scoreboard);
-  --color-score-c: var(--whistle);
+  --color-score-s: var(--tier-s);
+  --color-score-a: var(--tier-a);
+  --color-score-b: var(--tier-b);
+  --color-score-c: var(--tier-c);
 
   --color-heat-good: var(--pitch-glow);
   --color-heat-bad:  var(--whistle-glow);
@@ -93,6 +102,11 @@
   --whistle-glow:   rgba(165, 45, 34, 0.06);
 
   --sky:            #1e5fa8;
+
+  --tier-s:         #0072b2;
+  --tier-a:         #3a8fc7;
+  --tier-b:         #b8860b;
+  --tier-c:         #c1440e;
 }
 
 @font-face {
@@ -156,16 +170,17 @@ input[type="range"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 13px;
-  height: 13px;
-  margin-left: 4px;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
   border-radius: 50%;
-  border: 1px solid var(--color-text-muted);
+  border: 1px solid var(--color-accent);
   font-size: 9px;
   font-weight: 700;
   font-style: normal;
   line-height: 1;
-  color: var(--color-text-muted);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   cursor: help;
   vertical-align: middle;
 }
