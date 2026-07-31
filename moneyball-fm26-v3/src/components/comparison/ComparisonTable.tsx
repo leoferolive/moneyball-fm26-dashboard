@@ -1,25 +1,11 @@
 import type { DerivedPlayer } from '@/types/player.ts'
 import type { MetricDefinition } from '@/config/positions/types.ts'
+import { CATEGORY_LABELS } from '@/config/categoryLabels.ts'
 import { ScoreBadge } from '@/components/table/ScoreBadge.tsx'
 
 interface ComparisonTableProps {
   players: DerivedPlayer[]
   metrics: MetricDefinition[]
-}
-
-const categoryLabels: Record<string, string> = {
-  general: 'Geral',
-  attacking: 'Ataque',
-  defending: 'Defesa',
-  passing: 'Passes',
-  pressing: 'Pressão',
-  aerial: 'Aéreo',
-  physical: 'Físico',
-  creation: 'Criação',
-  shooting: 'Finalização',
-  goalkeeping: 'Goleiro',
-  discipline: 'Disciplina',
-  setpiece: 'Bola Parada',
 }
 
 function formatValue(val: unknown, metric: MetricDefinition): string {
@@ -149,7 +135,7 @@ function CategoryGroup({ category, metrics, players, playerCount }: CategoryGrou
             borderTop: '1px solid var(--color-border)',
           }}
         >
-          {categoryLabels[category] || category}
+          {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
         </td>
       </tr>
 

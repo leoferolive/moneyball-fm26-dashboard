@@ -9,6 +9,7 @@ export interface DerivedPlayer {
   _position: PositionKey
   _importedAt: number
   _customScore?: number
+  _hiddenAt?: number
 
   Jogador: string
   Nação?: string

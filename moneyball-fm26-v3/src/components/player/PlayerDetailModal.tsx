@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { DerivedPlayer } from '@/types/player.ts'
 import type { MetricDefinition } from '@/config/positions/types.ts'
+import { CATEGORY_LABELS } from '@/config/categoryLabels.ts'
 import { ScoreBadge } from '@/components/table/ScoreBadge.tsx'
 
 interface PlayerDetailModalProps {
@@ -32,13 +33,6 @@ export function PlayerDetailModal({ player, metrics, onClose }: PlayerDetailModa
     const cat = m.category
     if (!grouped.has(cat)) grouped.set(cat, [])
     grouped.get(cat)!.push(m)
-  }
-
-  const categoryLabels: Record<string, string> = {
-    general: 'Geral', attacking: 'Ataque', defending: 'Defesa',
-    passing: 'Passes', pressing: 'Pressão', aerial: 'Aéreo',
-    physical: 'Físico', creation: 'Criação', shooting: 'Finalização',
-    goalkeeping: 'Goleiro', discipline: 'Disciplina', setpiece: 'Bola Parada',
   }
 
   return (
@@ -89,7 +83,7 @@ export function PlayerDetailModal({ player, metrics, onClose }: PlayerDetailModa
               className="text-xs font-semibold uppercase tracking-wider mb-2 pb-1"
               style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}
             >
-              {categoryLabels[category] || category}
+              {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {catMetrics.map((metric) => {

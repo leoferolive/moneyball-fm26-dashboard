@@ -5,7 +5,9 @@ import { useImport } from '@/hooks/useImport.ts'
 import { useFilters } from '@/hooks/useFilters.ts'
 import { useSortedData } from '@/hooks/useSortedData.ts'
 import { useColumnStats } from '@/hooks/useColumnStats.ts'
-import { getPlayersForPosition } from '@/db/playerStore.ts'
+import { useColumnVisibility } from '@/hooks/useColumnVisibility.ts'
+import { useRowSelection } from '@/hooks/useRowSelection.ts'
+import { getPlayersForPosition, hidePlayers, restorePlayers } from '@/db/playerStore.ts'
 import { computeScoresForAll } from '@/engine/scorer.ts'
 import { extractClubs, extractNationalities } from '@/engine/filters.ts'
 import { ImportPanel } from '@/components/import/ImportPanel.tsx'
@@ -14,6 +16,9 @@ import { TeamAnalysis } from '@/components/stats/TeamAnalysis.tsx'
 import { FilterBar } from '@/components/filters/FilterBar.tsx'
 import { AdvancedFilters } from '@/components/filters/AdvancedFilters.tsx'
 import { PlayerTable } from '@/components/table/PlayerTable.tsx'
+import { ColumnPicker } from '@/components/table/ColumnPicker.tsx'
+import { BulkActionBar } from '@/components/table/BulkActionBar.tsx'
+import { HiddenPlayersPanel } from '@/components/table/HiddenPlayersPanel.tsx'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal.tsx'
 import { ScoringPanel } from '@/components/scoring/ScoringPanel.tsx'
 import type { DerivedPlayer } from '@/types/player.ts'
@@ -44,11 +49,6 @@ export function DashboardPage() {
     lastResult,
   } = useImport(positionConfigs)
 
-  // Load players from IndexedDB when position changes
-  useEffect(() => {
-    getPlayersForPosition(currentPosition).then(setRawPlayers)
-  }, [currentPosition, lastResult])
-
   // Apply scoring as derived state so imports and weight changes stay in sync
   // without a second render caused by a state-setting effect.
   const players = useMemo(() => {
@@ -68,18 +68,43 @@ export function DashboardPage() {
     return computeScoresForAll(rawPlayers, profile, stats, metrics)
   }, [rawPlayers, activeWeights, currentPosition, metrics])
 
+  // Jogadores ocultos (soft-hide) ficam fora da visão ativa, mas disponíveis
+  // para o painel de restauração
+  const activePlayers = useMemo(
+    () => players.filter((p) => p._hiddenAt === undefined),
+    [players],
+  )
+  const hiddenPlayers = useMemo(
+    () => rawPlayers
+      .filter((p) => p._hiddenAt !== undefined)
+      .sort((a, b) => (b._hiddenAt ?? 0) - (a._hiddenAt ?? 0)),
+    [rawPlayers],
+  )
+
   // Filter & sort
-  const { filters, filteredPlayers, updateFilter, resetFilters } = useFilters(players)
+  const { filters, filteredPlayers, updateFilter, resetFilters } = useFilters(activePlayers)
 
   // Default sort by _customScore if scoring is active
   const effectiveSortCol = sortColumn || (activeWeights.length > 0 ? '_customScore' : null)
   const sortedPlayers = useSortedData(filteredPlayers, effectiveSortCol, sortDirection)
 
-  // Get display metrics for current position
+  // Colunas visíveis na tabela: por padrão, todas as métricas de dados da
+  // posição (paridade com a planilha); usuário pode ligar/desligar via ColumnPicker
+  const columnVisibility = useColumnVisibility(currentPosition, metrics)
   const displayMetrics = useMemo(
-    () => metrics.filter((m) => m.displayInTable),
-    [metrics],
+    () => metrics.filter((m) => columnVisibility.visibleKeys.has(m.key)),
+    [metrics, columnVisibility.visibleKeys],
   )
+
+  // Seleção de linhas para exclusão em massa (reversível)
+  const rowSelection = useRowSelection(sortedPlayers)
+
+  // Load players from IndexedDB when position changes
+  useEffect(() => {
+    getPlayersForPosition(currentPosition).then(setRawPlayers)
+    rowSelection.clear()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPosition, lastResult])
 
   // Column stats for heatmap
   const columnKeys = useMemo(() => displayMetrics.map((m) => m.key), [displayMetrics])
@@ -90,8 +115,8 @@ export function DashboardPage() {
   )
 
   // Extract clubs/nationalities for filters
-  const clubs = useMemo(() => extractClubs(players), [players])
-  const nationalities = useMemo(() => extractNationalities(players), [players])
+  const clubs = useMemo(() => extractClubs(activePlayers), [activePlayers])
+  const nationalities = useMemo(() => extractNationalities(activePlayers), [activePlayers])
 
   const handleImport = useCallback(
     (rawText: string) => importData(rawText),
@@ -109,7 +134,25 @@ export function DashboardPage() {
     setSelectedPlayer(null)
     setActiveWeights([])
     resetFilters()
-  }, [clearData, resetFilters])
+    rowSelection.clear()
+  }, [clearData, resetFilters, rowSelection])
+
+  const handleHideSelected = useCallback(async () => {
+    const ids = [...rowSelection.selectedIds]
+    if (ids.length === 0) return
+    const confirmed = window.confirm(
+      `Ocultar ${ids.length} jogadores? Você pode restaurá-los em "Jogadores ocultos".`,
+    )
+    if (!confirmed) return
+    await hidePlayers(ids)
+    setRawPlayers(await getPlayersForPosition(currentPosition))
+    rowSelection.clear()
+  }, [rowSelection, currentPosition])
+
+  const handleRestore = useCallback(async (ids: number[]) => {
+    await restorePlayers(ids)
+    setRawPlayers(await getPlayersForPosition(currentPosition))
+  }, [currentPosition])
 
   return (
     <div>
@@ -144,7 +187,7 @@ export function DashboardPage() {
         search={filters.search}
         onSearchChange={(v) => updateFilter('search', v)}
         playerCount={filteredPlayers.length}
-        totalCount={players.length}
+        totalCount={activePlayers.length}
       />
 
       <AdvancedFilters
@@ -155,12 +198,34 @@ export function DashboardPage() {
         nationalities={nationalities}
       />
 
+      <ColumnPicker
+        metrics={metrics}
+        visibleKeys={columnVisibility.visibleKeys}
+        isCustomized={columnVisibility.isCustomized}
+        onSetVisibleKeys={columnVisibility.setVisibleKeys}
+        onShowAll={columnVisibility.showAll}
+        onShowOnlyDefault={columnVisibility.showOnlyDefault}
+        onShowNone={columnVisibility.showNone}
+      />
+
+      <HiddenPlayersPanel hiddenPlayers={hiddenPlayers} onRestore={handleRestore} />
+
+      {rowSelection.count > 0 && (
+        <BulkActionBar
+          count={rowSelection.count}
+          onHide={handleHideSelected}
+          onClear={rowSelection.clear}
+        />
+      )}
+
       <div className="pb-6">
         <PlayerTable
           players={sortedPlayers}
           displayMetrics={displayMetrics}
           columnStats={columnStats}
           onPlayerClick={setSelectedPlayer}
+          selectedIds={rowSelection.selectedIds}
+          onToggleSelect={rowSelection.toggle}
         />
       </div>
 

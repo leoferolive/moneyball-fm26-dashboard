@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import type { MetricDefinition } from '@/config/positions/types.ts'
 import type { ScoringProfile, WeightedMetric } from '@/types/scoring.ts'
 import type { PositionKey } from '@/types/position.ts'
+import { CATEGORY_LABELS } from '@/config/categoryLabels.ts'
 import { WeightSlider } from './WeightSlider.tsx'
 import { saveProfile, getProfilesForPosition, deleteProfile } from '@/db/profileStore.ts'
 import { getPresetsForPosition } from '@/config/presets/index.ts'
@@ -46,13 +47,6 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
     }
     return map
   }, [availableMetrics])
-
-  const categoryLabels: Record<string, string> = {
-    general: 'Geral', attacking: 'Ataque', defending: 'Defesa',
-    passing: 'Passes', pressing: 'Pressão', aerial: 'Aéreo',
-    physical: 'Físico', creation: 'Criação', shooting: 'Finalização',
-    goalkeeping: 'Goleiro', discipline: 'Disciplina', setpiece: 'Bola Parada',
-  }
 
   const handleAddMetric = useCallback((key: string) => {
     const newWeights = [...weights, { metricKey: key, weight: 50 }]
@@ -230,7 +224,7 @@ export function ScoringPanel({ positionKey, metrics, onProfileChange }: ScoringP
           {[...groupedAvailable.entries()].map(([cat, catMetrics]) => (
             <div key={cat} className="mb-2">
               <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                {categoryLabels[cat] || cat}
+                {CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat}
               </p>
               <div className="flex flex-wrap gap-1">
                 {catMetrics.map((m) => (

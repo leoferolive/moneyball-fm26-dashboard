@@ -32,6 +32,21 @@ export async function clearAllPlayers(): Promise<void> {
   await db.players.clear()
 }
 
+/** Soft-hide players (reversible) */
+export async function hidePlayers(ids: number[]): Promise<void> {
+  if (ids.length === 0) return
+  const hiddenAt = Date.now()
+  await db.players.where('_id').anyOf(ids).modify({ _hiddenAt: hiddenAt })
+}
+
+/** Restore previously hidden players */
+export async function restorePlayers(ids: number[]): Promise<void> {
+  if (ids.length === 0) return
+  await db.players.where('_id').anyOf(ids).modify((player) => {
+    delete player._hiddenAt
+  })
+}
+
 /** Get player counts per position */
 export async function getPositionCounts(): Promise<Record<string, number>> {
   const counts: Record<string, number> = {}
